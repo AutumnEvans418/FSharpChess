@@ -13,4 +13,8 @@
     <ProjectReference Include="..\Chess\Chess.fsproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="4.6.2" />
+  </ItemGroup>
+
 </Project>
