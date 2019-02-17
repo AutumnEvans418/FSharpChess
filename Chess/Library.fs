@@ -22,7 +22,7 @@ module Board =
     type MoveAction = {Piece:Piece option;NewX:int;NewY:int}
     type CanMovePiece = bool * MoveAction
     type Grid = {Width:int;Height:int;Pieces:Piece list}
-    let private movePiece piece x y = {piece with X=x;Y=y}
+    let movePiece piece x y = {piece with X=x;Y=y}
     type CanMove = Pos of int * int | Piece of Piece
     let getPiece grid x y =
         grid.Pieces |> Seq.tryFind(fun r -> r.X = x && r.Y=y)
@@ -55,12 +55,18 @@ module Board =
         Console.Clear()
         showGrid writeToConsole grid
     
-        
+    
+    let replacePiece grid actionPiece newX newY =
+        [for p in grid.Pieces do 
+                              if (p.X = actionPiece.X && p.Y = actionPiece.Y) then 
+                                      yield movePiece p newX newY 
+                              else yield p]
     let movePieceOnGrid grid canMove =
         let move,action = canMove
+        
         match action.Piece with
-        | Some p ->
-            if move then Some {grid with Pieces=[for p in grid.Pieces do if p.X <> p.X && p.Y <> p.Y then yield p else yield movePiece p action.NewX action.NewY]}
+        | Some actionPiece ->
+            if move then Some {grid with Pieces=replacePiece grid actionPiece action.NewX action.NewY}
             else None
         | None -> None
     
