@@ -9,9 +9,9 @@ module Pieces =
                     | ForwardRightDiag of Option<Range>
                     | ForwardLeftDiag of Option<Range> | BackRightDiag of Option<Range> | BackLeftDiag of Option<Range>
     type Color = Black | White
-    type Piece = {X:int;Y:int;Color:Color;Moves:Movement list;Attacks:Movement list;Type:PieceType}
+    type Piece = {Color:Color;Moves:Movement list;Attacks:Movement list;Type:PieceType}
     let range from tto = Some (Range(from,tto))
-    let pawnStart color x y  = {X=x;Y=y;Color=color;Moves=[Foward (range 1 2)];Attacks=[ForwardLeftDiag (range 1 1);ForwardRightDiag (range 1 1)];Type=Pawn}
+    let pawnStart color = {Color=color;Moves=[Foward (range 1 2)];Attacks=[ForwardLeftDiag (range 1 1);ForwardRightDiag (range 1 1)];Type=Pawn}
     let pawnRegular pawn = {pawn with Moves= [Foward (range 1 1)]}
     
 module Board =
@@ -21,11 +21,29 @@ module Board =
 
     type MoveAction = {Piece:Piece option;NewX:int;NewY:int}
     type CanMovePiece = bool * MoveAction
-    type Grid = {Width:int;Height:int;Pieces:Piece list}
+
+    type Square = {X:int;Y:int;Piece:Piece option}
+    type Grid = {Width:int;Height:int;Squares:Square list}
+    
+    let createGrid width height =
+        {Width=width;Height=height;Squares=[for x in 1..width do for y in 1..height -> {X=x;Y=y;Piece=None}]}
+    
+    
+    
+    
+    
+    
     let movePiece piece x y = {piece with X=x;Y=y}
+
+
+
+
+
+
+
     type CanMove = Pos of int * int | Piece of Piece
     let getPiece grid x y =
-        grid.Pieces |> Seq.tryFind(fun r -> r.X = x && r.Y=y)
+        grid.Squares |> Seq.tryFind(fun r -> r.X = x && r.Y=y)
     let create4by4PawnGame = {Width=4;Height=4;Pieces=[for x in 1..4 do yield pawnStart White x 1; yield pawnStart Black x 4]}
     let canMovePiece grid piece x y =
         match piece with
