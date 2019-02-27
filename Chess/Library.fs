@@ -50,6 +50,9 @@ module Board =
     
     let create4By4Grid = createEmptyGrid 4 4
     
+    let setup4By4PawnGame = updateGrid create4By4Grid [for r in 1..4 do yield (r,1, pawnStart White); yield (r,4, pawnStart Black)]
+    
+    
     let addPiece = updateGrid create4By4Grid [(1,1, pawnStart White)]
     //let movePiece piece x y = {piece with X=x;Y=y}
 
@@ -57,20 +60,17 @@ module Board =
 
 
 
+    type Move = {From:int*int;To:int*int}
 
+    type PossibleMoves = PossibleMove of ((int*int) -> (int*int) list)
 
-    type CanMove = Pos of int * int | Piece of Piece
+    
     let getPiece grid x y =
         grid.Squares |> Seq.tryFind(fun r -> r.X = x && r.Y=y)
     
     
     
-    let create4by4PawnGame = 
-        {  
-            Width=4;
-            Height=4;
-            Squares=[for x in 1..4 do yield {X=x;Y=1;Piece= Some (pawnStart White)}; yield {X=x;Y=4;Piece= Some (pawnStart Black)}]
-        }
+    
     let canMovePiece grid piece x y =
         match piece with
         | Pos (x,y) -> 
