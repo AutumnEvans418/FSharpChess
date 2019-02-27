@@ -25,17 +25,35 @@ module Board =
     type Square = {X:int;Y:int;Piece:Piece option}
     type Grid = {Width:int;Height:int;Squares:Square list}
     
-    let createGrid width height =
-        {Width=width;Height=height;Squares=[for x in 1..width do for y in 1..height -> {X=x;Y=y;Piece=None}]}
-    
-    
-    
-    
-    
-    
-    let movePiece piece x y = {piece with X=x;Y=y}
 
+    let createSquares width height createPiece =
+        [for x in 1..width do for y in 1..height -> createPiece x y]
+    
+    let createGrid createPiece width height  =
+        {Width=width;Height=height;Squares=createSquares width height createPiece}
+    
+    let createEmptySquare x y =  {X=x;Y=y;Piece=None}
+    let createEmptyGrid = createGrid (fun x y -> createEmptySquare x y )
+    
+    let updateSquare (square:Square) piece =
+        {square with Piece=Some piece}
+    
+    let createSquare matches =
+        let infun x y =
+            let result = matches |> Seq.tryFind(fun (px, py, _) -> px = x && py = y)
+            match result with
+            | None -> createEmptySquare x y
+            | Some (x,y,p) -> {X=x;Y=y;Piece=Some p}
+        infun
+    let updateGrid grid updates =
+        {grid with Squares=createSquares grid.Width grid.Height (createSquare updates)}
+    
+    let create4By4Grid = createEmptyGrid 4 4
+    
+    let addPiece = updateGrid create4By4Grid [(1,1, pawnStart White)]
+    //let movePiece piece x y = {piece with X=x;Y=y}
 
+    
 
 
 
@@ -44,18 +62,26 @@ module Board =
     type CanMove = Pos of int * int | Piece of Piece
     let getPiece grid x y =
         grid.Squares |> Seq.tryFind(fun r -> r.X = x && r.Y=y)
-    let create4by4PawnGame = {Width=4;Height=4;Pieces=[for x in 1..4 do yield pawnStart White x 1; yield pawnStart Black x 4]}
+    
+    
+    
+    let create4by4PawnGame = 
+        {  
+            Width=4;
+            Height=4;
+            Squares=[for x in 1..4 do yield {X=x;Y=1;Piece= Some (pawnStart White)}; yield {X=x;Y=4;Piece= Some (pawnStart Black)}]
+        }
     let canMovePiece grid piece x y =
         match piece with
         | Pos (x,y) -> 
             let p = getPiece grid x y
-            (p.IsSome,{Piece=p;NewX=x;NewY=y})
+            (p.IsSome,{Piece=Some p;NewX=x;NewY=y})
         | Piece p -> (true,{Piece=Some p;NewX=x;NewY=y})
         
     let showGrid showCellAction grid =
         for x in 1..grid.Width do 
         for y in 1..grid.Height do
-                                let p = grid.Pieces |> Seq.tryFind(fun p -> p.X = x && p.Y = y)
+                                let p = grid.Squares |> Seq.tryFind(fun p -> p.X = x && p.Y = y)
                                 showCellAction x y p
     
     let writeToConsole x y piece = 
