@@ -40,6 +40,9 @@ module Board =
     let updateSquare (square:Square) piece =
         {square with Piece=Some piece}
     
+    let getPiece grid x y =
+        grid.Squares |> List.where(fun r -> r.X=x && r.Y=y) |> List.map(fun r-> r.Piece) |> List.exactlyOne
+
     let createSquare matches =
         let infun x y =
             let result = matches |> Seq.tryFind(fun (px, py, _) -> px = x && py = y)
@@ -47,11 +50,23 @@ module Board =
             | None -> createEmptySquare x y
             | Some (x,y,p) -> {X=x;Y=y;Piece=p}
         infun
+    let updateSquares grid updates =
+        let infun x y =
+            let creator = createSquare updates
+            
+            let newPiece = creator x y
+            let oldPiece = getPiece grid x y
+            match (oldPiece,newPiece) with 
+            | (_,r) when r.Piece.IsSome -> {X=x;Y=y;Piece=r.Piece} 
+            | (r,_) when r.IsSome -> {X=x;Y=y;Piece=r}
+            | (_,_) -> createEmptySquare x y
+            
+        infun
     let getGridWidth grid =
         let l =grid.Squares |> List.length 
         l/4
     let updateGrid grid updates =
-        {grid with Squares=createSquares (getGridWidth grid) (createSquare updates)}
+        {grid with Squares=createSquares (getGridWidth grid) (updateSquares grid updates)}
     
     let create4By4Grid = createEmptyGrid 4
     
@@ -65,8 +80,7 @@ module Board =
 
         
         ()
-    let getPiece grid x y =
-        grid.Squares |> List.where(fun r -> r.X=x && r.Y=y) |> List.map(fun r-> r.Piece) |> List.exactlyOne
+   
         
 
 

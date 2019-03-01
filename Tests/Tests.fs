@@ -6,26 +6,33 @@ open Board
 open NUnit.Framework
 open System.Linq
 open FsUnit
-
-[<TestFixture>]
-type test() = class
-        [<Test>]
-        member self.test() =
-            create4By4Grid.Squares  |> should be unique
+module TestModule =
+    
+    let getPieces grid =
+                    grid.Squares  |> List.map(fun r -> r.Piece) |> List.choose id
+    [<TestFixture>]
+    type test() = class
+         
+            [<Test>]
+            member self.test() =
+                create4By4Grid.Squares  |> should be unique
             
-            let getPieces grid =
-                grid.Squares  |> List.map(fun r -> r.Piece) |> List.choose id
-            getPieces create4By4Grid |> should haveLength 0
+           
+                getPieces create4By4Grid |> should haveLength 0
 
-            getPieces setup4By4PawnGame |> should haveLength 8
+                getPieces setup4By4PawnGame |> should haveLength 8
 
-            let move = movePiece setup4By4PawnGame {From=(1,1);To=(1,2)}
+                let move = movePiece setup4By4PawnGame {From=(1,1);To=(1,2)}
 
-            getPieces move |> should haveLength 8
+                getPieces move |> should haveLength 8
             
 
-            ()
-    end
+                ()
+            [<Test>]
+            member self.``Grid update the grid``() =
+                updateGrid setup4By4PawnGame [(1,1,Some (pawnStart White))] |> getPieces |> should haveLength 8
+                ()
+        end
 
     
     //let ChessTests =
