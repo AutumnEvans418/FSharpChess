@@ -5,19 +5,20 @@ open FSharp.Core
 module Pieces =
     type Range = int * int
     type PieceType = Pawn
-    type Movement = L | Foward of Option<Range> | Back of Option<Range> | Right of Option<Range> | Left of Option<Range> 
+    type Movement = L | Forward of Option<Range> | Back of Option<Range> | Right of Option<Range> | Left of Option<Range> 
                     | ForwardRightDiag of Option<Range>
                     | ForwardLeftDiag of Option<Range> | BackRightDiag of Option<Range> | BackLeftDiag of Option<Range>
     type Color = Black | White
     type Piece = {Color:Color;Moves:Movement list;Attacks:Movement list;Type:PieceType}
     let range from tto = Some (Range(from,tto))
-    let pawnStart color = {Color=color;Moves=[Foward (range 1 2)];Attacks=[ForwardLeftDiag (range 1 1);ForwardRightDiag (range 1 1)];Type=Pawn}
-    let pawnRegular pawn = {pawn with Moves= [Foward (range 1 1)]}
+    let pawnStart color = {Color=color;Moves=[Forward (range 1 2)];Attacks=[ForwardLeftDiag (range 1 1);ForwardRightDiag (range 1 1)];Type=Pawn}
+    let pawnRegular pawn = {pawn with Moves= [Forward (range 1 1)]}
     
 module Board =
     open Pieces
     open System.Linq
     open System
+    open NUnit.Framework
     open NUnit.Framework
 
 
@@ -41,7 +42,10 @@ module Board =
         {square with Piece=Some piece}
     
     let getPiece grid x y =
-        grid.Squares |> List.where(fun r -> r.X=x && r.Y=y) |> List.map(fun r-> r.Piece) |> List.exactlyOne
+        grid.Squares 
+        |> List.where(fun r -> r.X=x && r.Y=y) 
+        |> List.map(fun r-> r.Piece) 
+        |> List.exactlyOne
 
     let createSquare matches =
         let infun x y =
@@ -52,14 +56,12 @@ module Board =
         infun
     let updateSquares grid updates =
         let infun x y =
-            let creator = createSquare updates
-            
-            let newPiece = creator x y
-            let oldPiece = getPiece grid x y
-            match (oldPiece,newPiece) with 
-            | (_,r) when r.Piece.IsSome -> {X=x;Y=y;Piece=r.Piece} 
-            | (r,_) when r.IsSome -> {X=x;Y=y;Piece=r}
-            | (_,_) -> createEmptySquare x y
+            let newPiece = updates |> List.where(fun (fx,fy,_)-> fx=x && fy=y) |> List.map(fun (_,_,p)->p) |> List.tryHead
+            match newPiece with
+            | Some r -> {X=x;Y=y;Piece=r}
+            | None -> 
+                        let oldPiece = getPiece grid x y
+                        {X=x;Y=y;Piece=oldPiece}
             
         infun
     let getGridWidth grid =
@@ -86,24 +88,29 @@ module Board =
 
 
     type Move = {From:int*int;To:int*int}
+    type MoveResult = Success of Grid | Failure of string
 
-   
-    //let getPiece grid x y =
-    //    grid.Squares |> List.map(fun r-> r.Piece) |> Seq.tryFind(fun r -> r.X = x && r.Y=y)
-    
+    let validMove grid move movement =
+        match movement with
+        | L -> ()
+        | Forward r -> ()
+
     let movePiece grid move =
         let (fx,fy) = move.From
         let (tx,ty) = move.To
         let piece = getPiece grid fx fy
-        updateGrid grid [(fx,fy,None);(tx,ty,piece)]
-    
-    
-    //let canMovePiece grid piece x y =
-    //    match piece with
-    //    | Pos (x,y) -> 
-    //        let p = getPiece grid x y
-    //        (p.IsSome,{Piece=Some p;NewX=x;NewY=y})
-    //    | Piece p -> (true,{Piece=Some p;NewX=x;NewY=y})
+        match piece with
+        | Some p -> 
+                    if p.Moves |> List.exists (fun r -> r.)
+                    Success (updateGrid grid [(fx,fy,None);(tx,ty,Some p)])
+        | None -> Failure (sprintf "there is no piece at (%i,%i)" fx fy)
+        
+    let handleFailure moveResult grid fail =
+        match moveResult with
+        | Success r -> r
+        | Failure s -> fail s
+                       grid
+
         
     let inline showGrid showCellAction grid =
         let width = getGridWidth grid
@@ -128,27 +135,6 @@ module Board =
         showGrid writeToConsole grid
     
     
-    //let replacePiece grid actionPiece newX newY =
-    //    [for p in grid.Pieces do 
-    //                          if (p.X = actionPiece.X && p.Y = actionPiece.Y) then 
-    //                                  yield movePiece p newX newY 
-    //                          else yield p]
-    //let movePieceOnGrid grid canMove =
-    //    let move,action = canMove
-        
-    //    match action.Piece with
-    //    | Some actionPiece ->
-    //        if move then Some {grid with Squares=replacePiece grid actionPiece action.NewX action.NewY}
-    //        else None
-    //    | None -> None
-    
-    //let takeTurn showGrid requestMove grid =
-    //    showGrid grid
-    //    let move = requestMove grid
-    //    match move with 
-    //    | Some r -> showGrid r 
-    //                r
-    //    | None _ -> grid
     
     let requestMoveConsole grid =
         Console.WriteLine()
@@ -160,7 +146,10 @@ module Board =
         let tox = Console.ReadLine() |> int
         Console.WriteLine("to y?")
         let toy = Console.ReadLine() |> int
-        movePiece grid {From=(x,y);To=(tox,toy)}
+        let m = movePiece grid {From=(x,y);To=(tox,toy)}  
+        handleFailure m grid (fun r -> Console.WriteLine(r))
+        
+
     
     let rec playGame grid showGrid requestMove gameOver =
         showGrid grid
@@ -170,7 +159,5 @@ module Board =
 
     let playConsoleGame grid =
         playGame grid showConsoleGrid requestMoveConsole (fun r -> false)
-    //let takeTurnConsole grid =
-    //    takeTurn showConsoleGrid requestMoveConsole grid
         
         
