@@ -51,7 +51,7 @@ module TestModule =
                 getPiece m 1 2 |> Option.isSome |> should be True
             [<Test>]
             member self.``moving pawn 3 spaces is invalid``() =
-                let t = (movePiece onepGrid {From=(1,1);To=(1,2)})
+                let t = movePiece onepGrid {From=(1,1);To=(1,4)}
 
                 let result = handleFailure t onepGrid (fun r -> Assert.Pass(r)) 
 

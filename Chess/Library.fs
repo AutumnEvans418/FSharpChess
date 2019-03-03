@@ -1,4 +1,4 @@
-namespace Chess
+﻿namespace Chess
 open FSharp.Core
 
 
@@ -91,9 +91,33 @@ module Board =
     type MoveResult = Success of Grid | Failure of string
 
     let validMove grid move movement =
+        let getDistance move =
+            let sq x = Math.Sqrt(x)
+            //√((x2 - x1)2 + (y2 - y1)2)
+            let fx, fy = move.From
+            let tx, ty = move.To
+            sq ((tx-fx |> float)**2. + (ty-fy |> float)**2.)
+        let distanceNotMoreThanMax move range =
+            let (min:int), (max:int) = range
+            let distance = getDistance move
+            distance <= (max |> float)
+        let trueIfNone range action =
+            match range with
+            | Some r -> action r
+            | None -> true
+        
+
         match movement with
-        | L -> ()
-        | Forward r -> ()
+        | L -> true
+        | Forward r -> trueIfNone r (distanceNotMoreThanMax move)
+            
+        | Right r -> true
+        | Back r -> true
+        | Left r -> true
+        | ForwardRightDiag r -> true
+        | BackRightDiag r -> true
+        | BackLeftDiag r -> true
+        | ForwardLeftDiag r -> true
 
     let movePiece grid move =
         let (fx,fy) = move.From
@@ -101,8 +125,9 @@ module Board =
         let piece = getPiece grid fx fy
         match piece with
         | Some p -> 
-                    if p.Moves |> List.exists (fun r -> r.)
-                    Success (updateGrid grid [(fx,fy,None);(tx,ty,Some p)])
+                    if p.Moves |> List.exists (fun r-> validMove grid move r) then
+                        Success (updateGrid grid [(fx,fy,None);(tx,ty,Some p)])
+                    else Failure "Invalid move!"
         | None -> Failure (sprintf "there is no piece at (%i,%i)" fx fy)
         
     let handleFailure moveResult grid fail =
