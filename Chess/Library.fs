@@ -1,23 +1,48 @@
 ﻿namespace Chess
 open FSharp.Core
 
-
-module Pieces =
+module Direction =
     type Range = int * int
-    type PieceType = Pawn
+    
     type Movement = L | Forward of Option<Range> | Back of Option<Range> | Right of Option<Range> | Left of Option<Range> 
                     | ForwardRightDiag of Option<Range>
                     | ForwardLeftDiag of Option<Range> | BackRightDiag of Option<Range> | BackLeftDiag of Option<Range>
+    let rangeSingle value =
+        match value with
+        | Some r -> Some (r,r)
+        | None -> None
+    let all rang = 
+        let range = rangeSingle rang
+        [Forward range;ForwardLeftDiag range;ForwardRightDiag range;Back range;BackLeftDiag range;BackRightDiag range;Left range;Right range]
+    let straights rang =
+        let range = rangeSingle rang
+        [Forward range;Right range;Back range;Left range;]
+    let diagnals rang =
+        let range = rangeSingle rang
+        [ForwardLeftDiag range;ForwardRightDiag range;BackLeftDiag range;BackRightDiag range]
+
+module Pieces =
+    open Direction
+    type PieceType = Pawn | King | Queen | Knight | Bishop | Rook
     type Color = Black | White
     type Piece = {Color:Color;Moves:Movement list;Attacks:Movement list;Type:PieceType}
     let range from tto = Some (Range(from,tto))
     let pawnStart color = {Color=color;Moves=[Forward (range 1 2)];Attacks=[ForwardLeftDiag (range 1 1);ForwardRightDiag (range 1 1)];Type=Pawn}
     let pawnRegular pawn = {pawn with Moves= [Forward (range 1 1)]}
     
+        
+    let king color = {Color=color;Moves=all (Some 1);Attacks=all (Some 1);Type=King;}
+    let queen color = {Color=color;Moves=all None;Attacks= all None;Type=Queen}
+    let knight color = {Color=color;Moves=[L];Attacks=[L];Type=Knight}
+    let bishop color = {Color=color;Moves=diagnals None;Attacks=diagnals None;Type=Bishop}
+    let rook color = {Color=color;Moves=straights None;Attacks=straights None;Type=Rook}
+
+    
 module Board =
     open Pieces
     open System.Linq
     open System
+    open Direction
     open NUnit.Framework
     open NUnit.Framework
 
@@ -110,10 +135,9 @@ module Board =
         match movement with
         | L -> true
         | Forward r -> trueIfNone r (distanceNotMoreThanMax move)
-            
-        | Right r -> true
-        | Back r -> true
-        | Left r -> true
+        | Right r -> trueIfNone r (distanceNotMoreThanMax move)
+        | Back r -> trueIfNone r (distanceNotMoreThanMax move)
+        | Left r -> trueIfNone r (distanceNotMoreThanMax move)
         | ForwardRightDiag r -> true
         | BackRightDiag r -> true
         | BackLeftDiag r -> true
