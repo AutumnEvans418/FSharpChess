@@ -67,6 +67,13 @@
     <Reference Include="System.Windows" />
     <Reference Include="WindowsBase" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Chess\Chess.fsproj">
+      <Name>Chess</Name>
+      <Project>{8535af62-b686-4017-803a-2ac6a806e3e9}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
