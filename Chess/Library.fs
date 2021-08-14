@@ -23,8 +23,9 @@ module Direction =
 
 module Pieces =
     open Direction
-    type PieceType = Pawn | King | Queen | Knight | Bishop | Rook
     type Color = Black | White
+
+    type PieceType = Pawn | King | Queen | Knight | Bishop | Rook
     type Piece = {Color:Color;Moves:Movement list;Attacks:Movement list;Type:PieceType}
     let range from tto = Some (Range(from,tto))
     let pawnStart color = {Color=color;Moves=[Forward (range 1 2)];Attacks=[ForwardLeftDiag (range 1 1);ForwardRightDiag (range 1 1)];Type=Pawn}

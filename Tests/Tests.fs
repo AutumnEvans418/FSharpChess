@@ -26,9 +26,18 @@ module TestModule =
 
     
 
-    let initialGame = 
+    let initialGame2 =
+        let pawns = [for r in 0..7 -> Some Pawn]
+        [Some Rook; Some Knight; Some Bishop; Some Queen; Some King; Some Bishop; Some Knight; Some Rook ] 
+        |> List.append pawns
+        |> List.append [for r in 0..31 -> None]
+        |> List.append pawns
+        |> List.append [Some Rook; Some Knight; Some Bishop; Some King; Some Queen; Some Bishop; Some Knight; Some Rook ]
+        
+    
+    let initialGame =
         [
-            [Some Rook; Some Knight; Some Bishop; Some Queen; Some King; Some Bishop; Some Knight; Some Rook ]
+            
             [for r in 0..7 -> Some Pawn]
             [for r in 0..7 -> None]
             [for r in 0..7 -> None]
@@ -40,12 +49,12 @@ module TestModule =
     let getXY (position: string) =
         let mapper = dict['a', 0;'b', 1;'c', 2;'d', 3;'e', 4;'f', 5;'g', 6;'h', 7]
         let xPos = mapper.[position.[0]]
-        let yPos = 8 - System.Int32.Parse(position.[1].ToString())
+        let yPos = System.Int32.Parse(position.[1].ToString()) - 1
         (xPos, yPos)
 
-    let lookup (game:'a option list list) (position:string) =
+    let lookup (game:'a option list) (position:string) =
         let xPos, yPos = getXY position
-        game.[yPos].[xPos]
+        game.[yPos * 8 + xPos]
 
     let move game fromPos toPos = 
         let fromX, fromY = getXY fromPos
@@ -53,9 +62,12 @@ module TestModule =
 
         let piece = lookup game fromPos
 
-        [
-            for y in 0..7 -> [for x in 0..7 -> if fromX = x && fromY = y then None else if toX = x && toY = y then piece else game.[y].[x] ]
-        ]
+        [for id in 0..63 -> 
+            let y = id / 8
+            let x = id - y * 8
+            if fromX = x && fromY = y then None
+            else if toX = x && toY = y then piece
+            else game.[id]]
 
 
     [<TestFixture>]
@@ -70,8 +82,25 @@ module TestModule =
         [<TestCase("h1", "Rook")>]
         [<TestCase("h8", "Rook")>]
         [<TestCase("d8", "Queen")>]
-        member _.GetInitialPiece str result =
-            lookup initialGame str |> Option.get |> string |> should FsUnit.TopLevelOperators.equal result
+        [<TestCase("e1", "Queen")>]
+        [<TestCase("a2", "Pawn")>]
+        [<TestCase("a3", "None")>]
+        member _.``Lookup an initial game piece`` str result =
+            lookup initialGame2 str |> Option.fold (fun _ v -> v |> string) "None" |> should equal result
+
+        [<TestCase("a2-a3", "a3", "Pawn")>]
+        [<TestCase("a2-a3", "a2", "None")>]
+        [<TestCase("a2-a3", "d8", "Queen")>]
+        [<TestCase("a2-a3", "h8", "Rook")>]
+        member _.MakeAMove str result piece =
+            let frm,tto = parseMove str
+            let newBoard = move initialGame2 frm tto
+               
+            lookup newBoard result |> Option.fold (fun _ v -> v |> string) "None" |> should equal piece
+
+        [<Test>]
+        member _.``game board is 64 squares``() =
+            initialGame2 |> should haveLength 64
     end
 
 
