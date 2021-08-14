@@ -48,10 +48,10 @@ module Counter =
                                 Button.content (state.game.[id] |> Option.fold (fun _ a -> a |> string) "")
                                 Button.row (
                                     let x,y = idToXY id
-                                    x)
+                                    y)
                                 Button.column (
                                     let x,y = idToXY id
-                                    y)
+                                    x)
                                 match pos, state.game.[id] with 
                                 | Some r, _ -> Button.onClick (fun _ -> dispatch (To id)) 
                                 | None, Some a -> Button.onClick (fun _ -> dispatch (From id))
