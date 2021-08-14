@@ -7,9 +7,6 @@ open NUnit.Framework
 open System.Linq
 open FsUnit
 module TestModule =
-    open NUnit.Framework
-    open NUnit.Framework
-    open NUnit.Framework
     
     let getPieces grid =
                     grid.Squares  |> List.map(fun r -> r.Piece) |> List.choose id
@@ -33,11 +30,11 @@ module TestModule =
         |> List.append [for r in 0..31 -> None]
         |> List.append pawns
         |> List.append [Some Rook; Some Knight; Some Bishop; Some King; Some Queen; Some Bishop; Some Knight; Some Rook ]
-        
+    
+
     
     let initialGame =
         [
-            
             [for r in 0..7 -> Some Pawn]
             [for r in 0..7 -> None]
             [for r in 0..7 -> None]
@@ -52,23 +49,41 @@ module TestModule =
         let yPos = System.Int32.Parse(position.[1].ToString()) - 1
         (xPos, yPos)
 
+    let xYToId x y =
+        y * 8 + x
+
+    let lookupXY game x y =
+        game |> List.item (xYToId x y)
+
     let lookup (game:'a option list) (position:string) =
         let xPos, yPos = getXY position
-        game.[yPos * 8 + xPos]
+        lookupXY game xPos yPos
 
-    let move game fromPos toPos = 
-        let fromX, fromY = getXY fromPos
-        let toX, toY = getXY toPos
+    let idToXY id = 
+        let y = id / 8
+        let x = id - y * 8
+        (x,y)
 
-        let piece = lookup game fromPos
-
+    let moveById game fromId toId =
+        let piece = game |> List.item fromId
+        
         [for id in 0..63 -> 
-            let y = id / 8
-            let x = id - y * 8
-            if fromX = x && fromY = y then None
-            else if toX = x && toY = y then piece
+            if fromId = id then None
+            else if toId = id then piece
             else game.[id]]
 
+    let moveByXY game fromPos toPos = 
+        let fromX, fromY = getXY fromPos
+        let toX, toY = getXY toPos
+        let fromId = xYToId fromX fromY
+        let toId = xYToId toX toY
+
+        moveById game fromId toId
+
+
+
+    let convertToGrid list = 
+        [for y in 0..7 -> [for x in 0..7 -> lookupXY list x y]]
 
     [<TestFixture>]
     type chessParserTests() = class
@@ -94,7 +109,7 @@ module TestModule =
         [<TestCase("a2-a3", "h8", "Rook")>]
         member _.MakeAMove str result piece =
             let frm,tto = parseMove str
-            let newBoard = move initialGame2 frm tto
+            let newBoard = moveByXY initialGame2 frm tto
                
             lookup newBoard result |> Option.fold (fun _ v -> v |> string) "None" |> should equal piece
 
