@@ -2,16 +2,11 @@
 open Chess
 open Pieces
 open Chess
-open Board
 open NUnit.Framework
 open System.Linq
 open FsUnit
 open System
 module TestModule =
-    
-    let getPieces grid =
-                    grid.Squares  |> List.map(fun r -> r.Piece) |> List.choose id
-    let onepGrid = updateGrid create4By4Grid [(1,1,Some (pawnStart White))]
     
     let parseMove (str:string) =
         let from = str.Split("-").[0]
@@ -25,25 +20,13 @@ module TestModule =
     
 
     let initialGame2 =
-        let pawns = [for r in 0..7 -> Some Pawn]
-        [Some Rook; Some Knight; Some Bishop; Some Queen; Some King; Some Bishop; Some Knight; Some Rook ] 
-        |> List.append pawns
+        let pawns color = [for r in 0..7 -> Some (pawn color)]
+        [Some (rook Black); Some (knight Black); Some (bishop Black); Some (queen Black); Some (king Black); Some (bishop Black); Some (knight Black); Some (rook Black) ] 
+        |> List.append (pawns Black)
         |> List.append [for r in 0..31 -> None]
-        |> List.append pawns
-        |> List.append [Some Rook; Some Knight; Some Bishop; Some King; Some Queen; Some Bishop; Some Knight; Some Rook ]
+        |> List.append (pawns White)
+        |> List.append [Some (rook White); Some (knight White); Some (bishop White); Some (king White); Some (queen White); Some (bishop White); Some (knight White); Some (rook White) ]
     
-
-    
-    let initialGame =
-        [
-            [for r in 0..7 -> Some Pawn]
-            [for r in 0..7 -> None]
-            [for r in 0..7 -> None]
-            [for r in 0..7 -> None]
-            [for r in 0..7 -> None]
-            [for r in 0..7 -> Some Pawn]
-            [Some Rook; Some Knight; Some Bishop; Some King; Some Queen; Some Bishop; Some Knight; Some Rook ]
-        ]
     let getXY (position: string) =
         let mapper = dict['a', 0;'b', 1;'c', 2;'d', 3;'e', 4;'f', 5;'g', 6;'h', 7]
         let xPos = mapper.[position.[0]]
@@ -75,9 +58,9 @@ module TestModule =
         | None, _ -> false
         | Some p, None -> 
             match p with
-            | Pawn -> 
+            | Pawn p -> 
                 if Math.Abs(fromId - toId) = 8 then true
-                else if Math.Abs(fromId - toId) = 16 then true
+                else if Math.Abs(fromId - toId) = 16 && p.HasMoved |> not then true
                 else false
             | _ -> true
         | Some p, Some c -> false
@@ -158,52 +141,5 @@ module TestModule =
         member _.``game board is 64 squares``() =
             initialGame2 |> should haveLength 64
     end
-
-
-    [<TestFixture>]
-    type test() = class
-         
-            [<Test>]
-            member self.``moving has the same amount``() =
-                create4By4Grid.Squares  |> should be unique
-            
-           
-                getPieces create4By4Grid |> should haveLength 0
-
-                getPieces setup4By4PawnGame |> should haveLength 8
-
-                let move = movePiece setup4By4PawnGame {From=(1,1);To=(1,2)}
-                let m = handleFailure move setup4By4PawnGame (fun r-> ())
-                getPieces m |> should haveLength 8
-            
-
-                ()
-            [<Test>]
-            member self.``Grid update the grid``() =
-                updateGrid setup4By4PawnGame [(1,1,Some (pawnStart White))] |> getPieces |> should haveLength 8
-                ()
-            [<Test>]
-            member self.``Move Pawn from 1,1 to two 1,2``()=
-
-                getPieces onepGrid |> should haveLength 1
-
-                getPiece onepGrid 1 1 |> Option.isSome |> should be True
-                let t = movePiece onepGrid {From=(1,1);To=(1,2)}
-                let m = handleFailure t onepGrid (fun r -> ())
-                
-                (getPiece m 1 1).IsSome |> should be False
-
-                getPiece m 1 2 |> Option.isSome |> should be True
-            [<Test>]
-            member self.``moving pawn 3 spaces is invalid``() =
-                let t = movePiece onepGrid {From=(1,1);To=(1,4)}
-
-                let result = handleFailure t onepGrid (fun r -> Assert.Pass(r)) 
-
-                getPiece result 1 1 |> Option.isSome |> should be True
-
-                Assert.Fail("it was valid when it shouldn't be")
-                
-        end
 
     
