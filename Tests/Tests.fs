@@ -6,6 +6,7 @@ open Board
 open NUnit.Framework
 open System.Linq
 open FsUnit
+open System
 module TestModule =
     
     let getPieces grid =
@@ -49,11 +50,11 @@ module TestModule =
         let yPos = System.Int32.Parse(position.[1].ToString()) - 1
         (xPos, yPos)
 
-    let xYToId x y =
+    let xYToId (x,y) =
         y * 8 + x
 
     let lookupXY game x y =
-        game |> List.item (xYToId x y)
+        game |> List.item (xYToId (x, y))
 
     let lookup (game:'a option list) (position:string) =
         let xPos, yPos = getXY position
@@ -63,8 +64,27 @@ module TestModule =
         let y = id / 8
         let x = id - y * 8
         (x,y)
+    
+    let between x a b =
+        x >= a && x <= b
+
+    let isValidMoveById game fromId toId =
+        let piece = game |> List.item fromId
+        let toCell = game |> List.item toId
+        match piece, toCell with
+        | None, _ -> false
+        | Some p, None -> 
+            match p with
+            | Pawn -> 
+                if Math.Abs(fromId - toId) = 8 then true
+                else if Math.Abs(fromId - toId) = 16 then true
+                else false
+            | _ -> true
+        | Some p, Some c -> false
 
     let moveById game fromId toId =
+        if isValidMoveById game fromId toId |> not then game
+        else
         let piece = game |> List.item fromId
         
         [for id in 0..63 -> 
@@ -73,10 +93,8 @@ module TestModule =
             else game.[id]]
 
     let moveByXY game fromPos toPos = 
-        let fromX, fromY = getXY fromPos
-        let toX, toY = getXY toPos
-        let fromId = xYToId fromX fromY
-        let toId = xYToId toX toY
+        let fromId = getXY fromPos |> xYToId
+        let toId = getXY toPos |> xYToId
 
         moveById game fromId toId
 
@@ -91,6 +109,29 @@ module TestModule =
         [<TestCase("a3-a4", 1)>]
         member _.validparse str moveCount =
             parseMoves str |> should haveLength moveCount
+
+        [<TestCase("a2-a3", true)>]
+        [<TestCase("a2-a4", true)>]
+        [<TestCase("a2-a4,a4-a5", true)>]
+        [<TestCase("a2-a3,a3-a5", false)>]
+        [<TestCase("a2-a5", false)>]
+        [<TestCase("a2-a2", false)>]
+        [<TestCase("a2-a1", false)>]
+        member _.isValidMoves move isValid =
+            let moves = parseMoves move
+            
+            let valid, game = moves |> List.fold (fun (valid, game) (fromPos, toPos) -> 
+                                        let fromId = getXY fromPos |> xYToId
+                                        let toId = getXY toPos |> xYToId
+                                        let result = isValidMoveById game fromId toId
+                                        let gameMove = moveById game fromId toId 
+                                        (valid && result, gameMove)
+                                        ) (true, initialGame2) 
+
+            Assert.AreEqual(valid, isValid, game |> string)      
+            
+            
+
 
         [<TestCase("a1", "Rook")>]
         [<TestCase("a8", "Rook")>]
