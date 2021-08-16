@@ -35,7 +35,8 @@ module ChessPage =
         | Reset -> init
     
     let view (state: State) (dispatch) =
-        let pos = state.fromPos
+        let fromPos = state.fromPos
+        //let fromPiece = fromPos |> Option.map (fun r -> state.game.[r]) |> Option.flatten |> Option.map (fun r -> r.Color)
         Grid.create [
             Grid.rowDefinitions "Auto,*"
             Grid.columnDefinitions "*, 100"
@@ -59,7 +60,12 @@ module ChessPage =
                     Grid.children [
                         for id in 0..63 -> 
                             Button.create [
-                                Button.background (match pos with | Some pos when pos = id -> "lightblue" | _ -> "gray")
+                                Button.background (match fromPos, state.game.[id] |> Option.map (fun r -> r.Color) with 
+                                                   | Some pos, _ when pos = id -> "lightblue"
+                                                   | Some pos, _ when isValidMoveById state.game pos id -> "yellow"
+                                                   | _, Some White -> "lightgray"
+                                                   | _, Some Black -> "black"
+                                                   | _, None -> "gray")
                                 Button.content (state.game.[id] |> Option.fold (fun _ a -> a.Name) "")
                                 Button.row (
                                     let x,y = idToXY id
@@ -67,7 +73,7 @@ module ChessPage =
                                 Button.column (
                                     let x,y = idToXY id
                                     x)
-                                match pos, state.game.[id] with 
+                                match fromPos, state.game.[id] with 
                                 | Some r, _ -> Button.onClick (fun _ -> dispatch (To id)) 
                                 | None, Some a -> Button.onClick (fun _ -> dispatch (From id))
                                 | _,_ -> Button.onClick (fun _ -> ())

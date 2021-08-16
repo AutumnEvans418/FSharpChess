@@ -44,6 +44,11 @@ module TestModule =
         [<TestCase("a2-a5", false, "white pawn fwd 2")>]
         [<TestCase("a2-a2", false, "white pawn no move")>]
         [<TestCase("a2-a1", false, "white pawn back 1")>]
+        [<TestCase("a2-a4,b7-b5", true, "white pawn move 2. black pawn move 2")>]
+        [<TestCase("a2-a4,b7-b5,a4-b5", true, "white pawn move 2. black pawn move 2. white takes black")>]
+        [<TestCase("a2-a4,a7-a5,a4-a5", false, "white pawn move 2. black pawn move 2. white takes black invalid")>]
+        [<TestCase("c1-b3,b2-b4", false, "knight move. white pawn move 2, but can't jump knight")>]
+        [<TestCase("c8-d6,d6-c4,c2-c4", false, "black knight move. white pawn move 2, but can't land on knight")>]
         member _.isValidMoves move isValid action =
             let moves = parseMoves move
             

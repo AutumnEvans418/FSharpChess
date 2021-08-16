@@ -48,7 +48,7 @@ module ChessParser =
     let idToPos id =
         let x,y = idToXY id
         let xPos = mapper.First(fun r -> r.Value = x).Key
-        sprintf "%c%i" xPos y 
+        sprintf "%c%i" xPos (y+1) 
 
 module ChessGrid =
     open Pieces
@@ -75,14 +75,25 @@ module ChessGrid =
 module ChessActions =
     open Pieces
     open ChessParser
-    let validatePawn piece (fromId:int) toId =
-        
-        if Math.Abs(fromId - toId) = 8 then 
-            match piece.Color with 
-            | White -> fromId < toId
-            | Black -> fromId > toId
-        else if Math.Abs(fromId - toId) = 16 && piece.HasMoved |> not then true
-        else false
+
+    let index color = 
+        match color with
+        | White -> 1
+        | Black -> -1
+
+    let getPawnMoves game piece toPiece fromId toId =
+        let i = index piece.Color
+        seq {
+            let id = fromId + 8 * i
+            let id16 = fromId + 16*i
+            if Option.isNone toPiece then yield id;
+            if piece.HasMoved |> not && game |> List.item id |> Option.isNone && game |> List.item id16 |> Option.isNone then yield id16;
+            if Option.isSome toPiece && (fromId + 9*i = toId || fromId + 7*i=toId) then yield toId }
+            
+
+    let validatePawn game piece toPiece (fromId:int) toId =
+        let moves = getPawnMoves game piece toPiece fromId toId
+        moves |> Seq.contains toId
 
     let validateKnight piece (fromId:int) toId =
         true
@@ -92,12 +103,12 @@ module ChessActions =
         let toCell = game |> List.item toId
         match piece, toCell with
         | None, _ -> false
-        | Some p, None -> 
+        | Some p, Some c when p.Color = c.Color -> false
+        | Some p, c -> 
             match p.Type with
-            | Pawn -> validatePawn p fromId toId
+            | Pawn -> validatePawn game p c fromId toId
             | Knight -> validateKnight p fromId toId
             | _ -> true
-        | Some p, Some c -> false
 
     let moveById game fromId toId =
         if isValidMoveById game fromId toId |> not then None
