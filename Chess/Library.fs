@@ -1,37 +1,17 @@
 ﻿namespace Chess
 open FSharp.Core
 
-//module Direction =
-//    type Range = int * int
-    
-//    type Movement = L | Forward of Option<Range> | Back of Option<Range> | Right of Option<Range> | Left of Option<Range> 
-//                    | ForwardRightDiag of Option<Range>
-//                    | ForwardLeftDiag of Option<Range> | BackRightDiag of Option<Range> | BackLeftDiag of Option<Range>
-//    let rangeSingle value =
-//        match value with
-//        | Some r -> Some (r,r)
-//        | None -> None
-//    let all rang = 
-//        let range = rangeSingle rang
-//        [Forward range;ForwardLeftDiag range;ForwardRightDiag range;Back range;BackLeftDiag range;BackRightDiag range;Left range;Right range]
-//    let straights rang =
-//        let range = rangeSingle rang
-//        [Forward range;Right range;Back range;Left range;]
-//    let diagnals rang =
-//        let range = rangeSingle rang
-//        [ForwardLeftDiag range;ForwardRightDiag range;BackLeftDiag range;BackRightDiag range]
-
 module Pieces =
     type Color = Black | White
+    type PieceType = Pawn  | King   | Queen   | Knight   | Bishop   | Rook  
 
-    type Piece = {Color:Color;HasMoved: bool}
-    type PieceType = Pawn of Piece | King of Piece  | Queen of Piece  | Knight of Piece  | Bishop of Piece  | Rook of Piece 
+    type Piece = {Color:Color;HasMoved: bool;Name: string; Type:PieceType}
     
-    let pawn color = Pawn {Color=color;HasMoved=false}
-    let king color = King {Color=color;HasMoved=false}
-    let queen color = Queen {Color=color;HasMoved=false}
-    let knight color = Knight {Color=color;HasMoved=false}
-    let bishop color = Bishop {Color=color;HasMoved=false}
-    let rook color = Rook {Color=color;HasMoved=false}
+    let pawn color = {Color=color;HasMoved=false; Name="Pawn";Type=Pawn}
+    let king color = {Color=color;HasMoved=false; Name="King";Type=King}
+    let queen color ={Color=color;HasMoved=false; Name="Queen";Type=Queen}
+    let knight color={Color=color;HasMoved=false; Name="Knight";Type=Knight}
+    let bishop color = {Color=color;HasMoved=false; Name="Bishop"; Type=Bishop}
+    let rook color = {Color=color;HasMoved=false; Name="Rook"; Type=Rook}
 
         

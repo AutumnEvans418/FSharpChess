@@ -26,9 +26,9 @@ module TestModule =
         |> List.append [for r in 0..31 -> None]
         |> List.append (pawns White)
         |> List.append [Some (rook White); Some (knight White); Some (bishop White); Some (king White); Some (queen White); Some (bishop White); Some (knight White); Some (rook White) ]
+    let mapper = dict['a', 0;'b', 1;'c', 2;'d', 3;'e', 4;'f', 5;'g', 6;'h', 7]
     
     let getXY (position: string) =
-        let mapper = dict['a', 0;'b', 1;'c', 2;'d', 3;'e', 4;'f', 5;'g', 6;'h', 7]
         let xPos = mapper.[position.[0]]
         let yPos = System.Int32.Parse(position.[1].ToString()) - 1
         (xPos, yPos)
@@ -51,29 +51,44 @@ module TestModule =
     let between x a b =
         x >= a && x <= b
 
+    let idToPos id =
+        let x,y = idToXY id
+        let xPos = mapper.First(fun r -> r.Value = x).Key
+        sprintf "%c%i" xPos y 
+
+    let validatePawn piece (fromId:int) toId =
+        
+        if Math.Abs(fromId - toId) = 8 then 
+            match piece.Color with 
+            | White -> fromId < toId
+            | Black -> fromId > toId
+        else if Math.Abs(fromId - toId) = 16 && piece.HasMoved |> not then true
+        else false
+
+    let validateKnight piece (fromId:int) toId =
+        true
+
     let isValidMoveById game fromId toId =
         let piece = game |> List.item fromId
         let toCell = game |> List.item toId
         match piece, toCell with
         | None, _ -> false
         | Some p, None -> 
-            match p with
-            | Pawn p -> 
-                if Math.Abs(fromId - toId) = 8 then true
-                else if Math.Abs(fromId - toId) = 16 && p.HasMoved |> not then true
-                else false
+            match p.Type with
+            | Pawn -> validatePawn p fromId toId
+            | Knight -> validateKnight p fromId toId
             | _ -> true
         | Some p, Some c -> false
 
     let moveById game fromId toId =
-        if isValidMoveById game fromId toId |> not then game
+        if isValidMoveById game fromId toId |> not then None
         else
-        let piece = game |> List.item fromId
+        let piece = game |> List.item fromId |> Option.get
         
-        [for id in 0..63 -> 
-            if fromId = id then None
-            else if toId = id then piece
-            else game.[id]]
+        Some [for id in 0..63 -> 
+                if fromId = id then None
+                else if toId = id then Some {piece with HasMoved = true}
+                else game.[id]]
 
     let moveByXY game fromPos toPos = 
         let fromId = getXY fromPos |> xYToId
@@ -93,25 +108,37 @@ module TestModule =
         member _.validparse str moveCount =
             parseMoves str |> should haveLength moveCount
 
-        [<TestCase("a2-a3", true)>]
-        [<TestCase("a2-a4", true)>]
-        [<TestCase("a2-a4,a4-a5", true)>]
-        [<TestCase("a2-a3,a3-a5", false)>]
-        [<TestCase("a2-a5", false)>]
-        [<TestCase("a2-a2", false)>]
-        [<TestCase("a2-a1", false)>]
-        member _.isValidMoves move isValid =
+        [<TestCase("a2", "White", "Pawn")>]
+        [<TestCase("a7", "Black", "Pawn")>]
+        member _.ColorTest position color typeName =
+            let piece = lookup initialGame2 position |> Option.get
+            piece.Name |> should equal typeName
+            piece.Color |> string |> should equal color            
+
+
+        [<TestCase("a2-a3", true, "White Pawn Forward 1 space")>]
+        [<TestCase("a2-a4", true, "White Pawn forward 2")>]
+        [<TestCase("a2-a4,a4-a5", true, "white pawn forward 2, then foward 1")>]
+        [<TestCase("a7-a5,a5-a6", false, "black pawn forward 2, then back 1")>]
+        [<TestCase("a7-a5", true, "black pawn forward 2")>]
+        [<TestCase("a7-a6", true, "black pawn forward 1")>]
+        [<TestCase("a2-a4,a4-a3", false, "white pawn forward 2, then back 1")>]
+        [<TestCase("a2-a3,a3-a5", false, "white pawn forward 1, then foward 2")>]
+        [<TestCase("a2-a5", false, "white pawn fwd 2")>]
+        [<TestCase("a2-a2", false, "white pawn no move")>]
+        [<TestCase("a2-a1", false, "white pawn back 1")>]
+        member _.isValidMoves move isValid action =
             let moves = parseMoves move
             
             let valid, game = moves |> List.fold (fun (valid, game) (fromPos, toPos) -> 
                                         let fromId = getXY fromPos |> xYToId
                                         let toId = getXY toPos |> xYToId
-                                        let result = isValidMoveById game fromId toId
-                                        let gameMove = moveById game fromId toId 
+                                        let result = isValidMoveById (game |> Option.get) fromId toId
+                                        let gameMove = moveById (game |> Option.get) fromId toId 
                                         (valid && result, gameMove)
-                                        ) (true, initialGame2) 
+                                        ) (true, Some initialGame2) 
 
-            Assert.AreEqual(valid, isValid, game |> string)      
+            Assert.AreEqual(isValid, valid, action)      
             
             
 
@@ -125,7 +152,7 @@ module TestModule =
         [<TestCase("a2", "Pawn")>]
         [<TestCase("a3", "None")>]
         member _.``Lookup an initial game piece`` str result =
-            lookup initialGame2 str |> Option.fold (fun _ v -> v |> string) "None" |> should equal result
+            lookup initialGame2 str |> Option.fold (fun _ v -> v.Name) "None" |> should equal result
 
         [<TestCase("a2-a3", "a3", "Pawn")>]
         [<TestCase("a2-a3", "a2", "None")>]
@@ -133,9 +160,9 @@ module TestModule =
         [<TestCase("a2-a3", "h8", "Rook")>]
         member _.MakeAMove str result piece =
             let frm,tto = parseMove str
-            let newBoard = moveByXY initialGame2 frm tto
+            let newBoard = moveByXY initialGame2 frm tto |> Option.get
                
-            lookup newBoard result |> Option.fold (fun _ v -> v |> string) "None" |> should equal piece
+            lookup newBoard result |> Option.fold (fun _ v -> v.Name) "None" |> should equal piece
 
         [<Test>]
         member _.``game board is 64 squares``() =
