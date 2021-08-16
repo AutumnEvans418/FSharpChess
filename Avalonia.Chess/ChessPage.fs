@@ -3,11 +3,13 @@ namespace Avalonia.Chess
 open Chess.Pieces
 open Avalonia.FuncUI.Components
 
-module Counter =
+module ChessPage =
     open Avalonia.Controls
     open Avalonia.FuncUI.DSL
     open Avalonia.Layout
-    open Tests.TestModule
+    open Chess.ChessParser
+    open Chess.ChessActions
+    open Chess.ChessGrid
     
     type State = { 
         game : Piece option list

@@ -18,15 +18,15 @@ module Shell =
 
     type State =
         /// store the child state in your main state
-        { aboutState: About.State; counterState: Counter.State;}
+        { aboutState: About.State; counterState: ChessPage.State;}
 
     type Msg =
         | AboutMsg of About.Msg
-        | CounterMsg of Counter.Msg
+        | CounterMsg of ChessPage.Msg
 
     let init =
         let aboutState, aboutCmd = About.init
-        let counterState = Counter.init
+        let counterState = ChessPage.init
         { aboutState = aboutState; counterState = counterState },
         /// If your children controls don't emit any commands
         /// in the init function, you can just return Cmd.none
@@ -45,7 +45,7 @@ module Shell =
             Cmd.map AboutMsg cmd
         | CounterMsg countermsg ->
             let counterMsg =
-                Counter.update countermsg state.counterState
+                ChessPage.update countermsg state.counterState
             { state with counterState = counterMsg },
             /// map the message to the kind of message 
             /// your child control needs to handle
@@ -59,7 +59,7 @@ module Shell =
                       TabControl.viewItems
                           [ TabItem.create
                                 [ TabItem.header "Chess Game"
-                                  TabItem.content (Counter.view state.counterState (CounterMsg >> dispatch)) ]
+                                  TabItem.content (ChessPage.view state.counterState (CounterMsg >> dispatch)) ]
                             TabItem.create
                                 [ TabItem.header "About"
                                   TabItem.content (About.view state.aboutState (AboutMsg >> dispatch)) ] ] ] ] ]
