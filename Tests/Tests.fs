@@ -16,7 +16,18 @@ module TestModule =
     
 
 
+    let validateMoves game move isValid action =
+        let moves = parseMoves move
+        
+        let valid, game = moves |> List.fold (fun (valid, game) (fromPos, toPos) -> 
+                                    let fromId = getXY fromPos |> xYToId
+                                    let toId = getXY toPos |> xYToId
+                                    let result = isValidMoveById (game |> Option.get) fromId toId
+                                    let gameMove = moveById (game |> Option.get) fromId toId 
+                                    (valid && result, gameMove)
+                                    ) (true, Some game) 
 
+        Assert.AreEqual(isValid, valid, action) 
 
     [<TestFixture>]
     type chessParserTests() = class
@@ -28,9 +39,12 @@ module TestModule =
         [<TestCase("a2", "White", "Pawn")>]
         [<TestCase("a7", "Black", "Pawn")>]
         member _.ColorTest position color typeName =
-            let piece = lookup initialGame2 position |> Option.get
+            let piece = lookup initialGame position |> Option.get
             piece.Name |> should equal typeName
             piece.Color |> string |> should equal color            
+
+
+        
 
 
         [<TestCase("a2-a3", true, "White Pawn Forward 1 space")>]
@@ -54,20 +68,14 @@ module TestModule =
         [<TestCase("b1-a3", true, "white knight move left")>]
         [<TestCase("b1-c3", true, "white knight move right")>]
         member _.isValidMoves move isValid action =
-            let moves = parseMoves move
+            validateMoves initialGame move isValid action   
             
-            let valid, game = moves |> List.fold (fun (valid, game) (fromPos, toPos) -> 
-                                        let fromId = getXY fromPos |> xYToId
-                                        let toId = getXY toPos |> xYToId
-                                        let result = isValidMoveById (game |> Option.get) fromId toId
-                                        let gameMove = moveById (game |> Option.get) fromId toId 
-                                        (valid && result, gameMove)
-                                        ) (true, Some initialGame2) 
-
-            Assert.AreEqual(isValid, valid, action)      
-            
-            
-
+        [<TestCase("a1-a3", true, "move rook forward")>]
+        [<TestCase("a1-a3,a3-b3", true, "move rook forward and then right")>]
+        [<TestCase("a1-b2", false, "move rook diagnal fail")>]
+        [<TestCase("c1-a2,a1-a3", false, "move knight in front of rook and try to jump fail")>]
+        member _.``rook isvalidmoves`` move isValid action =
+            validateMoves noPawnGame move isValid action  
 
         [<TestCase("a1", "Rook")>]
         [<TestCase("a8", "Rook")>]
@@ -78,7 +86,7 @@ module TestModule =
         [<TestCase("a2", "Pawn")>]
         [<TestCase("a3", "None")>]
         member _.``Lookup an initial game piece`` str result =
-            lookup initialGame2 str |> Option.fold (fun _ v -> v.Name) "None" |> should equal result
+            lookup initialGame str |> Option.fold (fun _ v -> v.Name) "None" |> should equal result
 
         [<TestCase("a2-a3", "a3", "Pawn")>]
         [<TestCase("a2-a3", "a2", "None")>]
@@ -86,13 +94,13 @@ module TestModule =
         [<TestCase("a2-a3", "h8", "Rook")>]
         member _.MakeAMove str result piece =
             let frm,tto = parseMove str
-            let newBoard = moveByXY initialGame2 frm tto |> Option.get
+            let newBoard = moveByXY initialGame frm tto |> Option.get
                
             lookup newBoard result |> Option.fold (fun _ v -> v.Name) "None" |> should equal piece
 
         [<Test>]
         member _.``game board is 64 squares``() =
-            initialGame2 |> should haveLength 64
+            initialGame |> should haveLength 64
     end
 
     

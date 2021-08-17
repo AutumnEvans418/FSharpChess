@@ -16,7 +16,7 @@ module ChessPage =
         fromPos : int option
         Moves: string list
         }
-    let init = { game = initialGame2; fromPos = None; Moves=[] }
+    let init = { game = initialGame; fromPos = None; Moves=[] }
 
     type Msg = From of int | To of int | Reset
 

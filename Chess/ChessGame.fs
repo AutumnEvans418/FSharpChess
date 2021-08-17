@@ -57,13 +57,19 @@ module ChessGrid =
     open Pieces
     open ChessParser
 
-    let initialGame2 =
+    let initialGame =
         let pawns color = [for r in 0..7 -> Some (pawn color)]
         [Some (rook Black); Some (knight Black); Some (bishop Black); Some (queen Black); Some (king Black); Some (bishop Black); Some (knight Black); Some (rook Black) ] 
         |> List.append (pawns Black)
         |> List.append [for r in 0..31 -> None]
         |> List.append (pawns White)
         |> List.append [Some (rook White); Some (knight White); Some (bishop White); Some (king White); Some (queen White); Some (bishop White); Some (knight White); Some (rook White) ]
+
+    let noPawnGame =
+        [Some (rook Black); Some (knight Black); Some (bishop Black); Some (queen Black); Some (king Black); Some (bishop Black); Some (knight Black); Some (rook Black) ] 
+        |> List.append [for r in 0..47 -> None]
+        |> List.append [Some (rook White); Some (knight White); Some (bishop White); Some (king White); Some (queen White); Some (bishop White); Some (knight White); Some (rook White) ]
+        
 
     let lookupXY game x y =
         game |> List.item (xYToId (x, y))
@@ -110,8 +116,28 @@ module ChessActions =
             if getRow (fromId+6) = row + 1 then yield fromId + 6;
             if getRow (fromId-6) = row - 1 then yield fromId - 6;}
 
-    let validateKnight piece (fromId:int) toId =
+    let validateKnight (fromId:int) toId =
         let moves = getKnightMoves fromId
+        moves |> Seq.contains toId
+
+    let getRookMoves game fromId toId =
+        
+        let inColumn = (fromId - toId) % 8 = 0
+        let inRow = getRow fromId = getRow toId
+        let unfoldFunc next a =
+            match a with
+            | Some id -> if id < 64 && id >= 0 && game |> List.item id |> Option.isNone then Some(a, Some(id+next)) else Some(a, None)
+            | None -> None
+
+        seq {
+            if inColumn then yield! Seq.unfold (unfoldFunc 8) (Some(fromId + 8)) |> Seq.choose id
+            if inColumn then yield! Seq.unfold (unfoldFunc -8) (Some(fromId - 8)) |> Seq.choose id
+            if inRow then yield! Seq.unfold (unfoldFunc 1) (Some(fromId+1)) |> Seq.choose id
+            if inRow then yield! Seq.unfold (unfoldFunc -1) (Some(fromId-1)) |> Seq.choose id
+        }
+
+    let validateRook game fromId toId =
+        let moves = getRookMoves game fromId toId
         moves |> Seq.contains toId
 
     let isValidMoveById game fromId toId =
@@ -123,7 +149,8 @@ module ChessActions =
         | Some p, c -> 
             match p.Type with
             | Pawn -> validatePawn game p c fromId toId
-            | Knight -> validateKnight p fromId toId
+            | Knight -> validateKnight fromId toId
+            | Rook -> validateRook game fromId toId
             | _ -> true
 
     let moveById game fromId toId =
