@@ -37,8 +37,11 @@ module ChessParser =
     let xYToId (x,y) =
         y * 8 + x
 
+    let getRow id =
+        id / 8
+
     let idToXY id = 
-        let y = id / 8
+        let y = getRow id
         let x = id - y * 8
         (x,y)
         
@@ -95,8 +98,21 @@ module ChessActions =
         let moves = getPawnMoves game piece toPiece fromId toId
         moves |> Seq.contains toId
 
+    let getKnightMoves fromId =
+        let row = getRow fromId
+        seq {
+            if getRow (fromId+15) = row + 2 then yield fromId + 15;
+            if getRow (fromId+17) = row + 2 then yield fromId + 17;
+            if getRow (fromId-15) = row - 2 then yield fromId - 15;
+            if getRow (fromId-17) = row - 2 then yield fromId - 17;
+            if getRow (fromId+10) = row + 1 then yield fromId + 10;
+            if getRow (fromId-10) = row - 1 then yield fromId - 10;
+            if getRow (fromId+6) = row + 1 then yield fromId + 6;
+            if getRow (fromId-6) = row - 1 then yield fromId - 6;}
+
     let validateKnight piece (fromId:int) toId =
-        true
+        let moves = getKnightMoves fromId
+        moves |> Seq.contains toId
 
     let isValidMoveById game fromId toId =
         let piece = game |> List.item fromId
