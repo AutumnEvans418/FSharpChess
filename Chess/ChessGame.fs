@@ -69,6 +69,11 @@ module ChessGrid =
         [Some (rook Black); Some (knight Black); Some (bishop Black); Some (queen Black); Some (king Black); Some (bishop Black); Some (knight Black); Some (rook Black) ] 
         |> List.append [for r in 0..47 -> None]
         |> List.append [Some (rook White); Some (knight White); Some (bishop White); Some (king White); Some (queen White); Some (bishop White); Some (knight White); Some (rook White) ]
+    
+    let endGame =
+        [None; None; None; Some (queen Black); Some (king Black); None; None; None] 
+        |> List.append [for r in 0..47 -> None]
+        |> List.append [None; None; None; Some (queen White); Some (king White); None; None; None]
         
 
     let lookupXY game x y =
@@ -89,8 +94,9 @@ module ChessActions =
         match color with
         | White -> 1
         | Black -> -1
+    let emptySpace game id = game |> List.item id |> Option.isNone
 
-    let getPawnMoves game piece fromId =
+    let getPawnMoves game piece fromId kingCheck =
         let i = index piece.Color
         seq {
             let id = fromId + 8 * i
@@ -101,10 +107,12 @@ module ChessActions =
 
             let isFree id = game |> List.item id |> Option.isNone 
 
-            if isFree id then yield id;
-            if piece.HasMoved |> not && game |> List.item id |> Option.isNone && game |> List.item id16 |> Option.isNone then yield id16;
-            if isFree attack1 |> not then yield attack1
-            if isFree attack2 |> not then yield attack2
+            if kingCheck |> not then
+                if isFree id then yield id;
+                if piece.HasMoved |> not && emptySpace game id && emptySpace game id16 then yield id16;
+            
+            if isFree attack1 |> not || kingCheck  then yield attack1
+            if isFree attack2 |> not || kingCheck then yield attack2
         }
            
     let getKnightMoves fromId =
@@ -119,42 +127,51 @@ module ChessActions =
             if getRow (fromId+6) = row + 1 then yield fromId + 6;
             if getRow (fromId-6) = row - 1 then yield fromId - 6;}
 
-    let getRookMoves game fromId =
-        
-        let inColumn = fun toId -> (fromId - toId) % 8 = 0
-        let inRow = fun toId -> getRow fromId = getRow toId
-        let unfoldFunc next isValid a  =
-            match a with
-            | Some id when isValid id -> 
-                if id < 64 && id >= 0 && game |> List.item id |> Option.isNone then 
-                    Some(a, Some(id+next)) 
-                else 
-                    Some(a, None)
-            | Some _ -> None
-            | None -> None
+    let getColor game fromId =
+        game |> List.item fromId |> Option.map (fun r -> r.Color)
+    let getEnemy color =
+         match color with
+         | White -> Black
+         | Black -> White
 
+    let isEnemyColor game fromId id =
+        getColor game fromId <> getColor game id
+
+    let MoveAndCheckForPieces game isEnemyColor next isValid a  =
+        
+        let inRange id = id < 64 && id >= 0
+
+        match a with
+        | Some id when inRange id && isValid id next -> 
+            if emptySpace game id then 
+                Some(a, Some(id+next)) 
+            else if isEnemyColor id then
+                Some(a, None)
+            else
+                None
+        | Some _ -> None
+        | None -> None
+
+    let getRookMoves game fromId =
+        let inColumn = fun toId _ -> (fromId - toId) % 8 = 0
+        let inRow = fun toId _ -> getRow fromId = getRow toId
+        
+
+        let getMoves skip validate = Seq.unfold (MoveAndCheckForPieces game (isEnemyColor game fromId) skip validate) (Some(fromId + skip))  |> Seq.choose id
         seq {
             // move forward until you hit something
-            yield! Seq.unfold (unfoldFunc 8 inColumn) (Some(fromId + 8))  |> Seq.choose id
-            yield! Seq.unfold (unfoldFunc -8 inColumn) (Some(fromId - 8))  |> Seq.choose id
+            yield! getMoves 8 inColumn
+            yield! getMoves -8 inColumn
 
             // move sideways until you hit something
-            yield! Seq.unfold (unfoldFunc 1 inRow) (Some(fromId+1)) |> Seq.choose id
-            yield! Seq.unfold (unfoldFunc -1 inRow) (Some(fromId-1)) |> Seq.choose id
+            yield! getMoves 1 inRow
+            yield! getMoves -1 inRow
         }
 
     let getBishopMoves game fromId =
-        let unfoldFunc next a  =
-            match a with
-            | Some id when Math.Abs(getRow (id) - getRow (id-next)) = 1 -> 
-                if id < 64 && id >= 0 && game |> List.item id |> Option.isNone then 
-                    Some(a, Some(id+next)) 
-                else 
-                    Some(a, None)
-            | Some _ -> None
-            | None -> None
+        let isInNextRow id next = Math.Abs(getRow (id) - getRow (id-next)) = 1
 
-        let getMoves skip = Seq.unfold (unfoldFunc skip) (Some(fromId+skip)) |> Seq.choose id
+        let getMoves skip = Seq.unfold (MoveAndCheckForPieces game (isEnemyColor game fromId) skip isInNextRow) (Some(fromId+skip)) |> Seq.choose id
 
         seq {
             yield! getMoves 9
@@ -166,23 +183,34 @@ module ChessActions =
     let getQueenMoves game fromId =
         getBishopMoves game fromId |> Seq.append (getRookMoves game fromId)
 
-    let getEnemy color =
-        match color with
-        | White -> Black
-        | Black -> White
+ 
 
     
     let validateMoves toId moves =
         moves |> Seq.contains toId
 
-    let getKingMoves game fromId getMoves =
+
+    let private getMoves game fromId includeMoves =
+        let piece = game |> List.item fromId
+        match piece with
+        | Some p -> 
+            match p.Type with
+            | Pawn -> getPawnMoves game p fromId includeMoves
+            | Knight -> getKnightMoves fromId 
+            | Rook -> getRookMoves game fromId 
+            | Bishop -> getBishopMoves game fromId
+            | Queen -> getQueenMoves game fromId 
+            | _ -> Seq.empty
+        | None -> Seq.empty
+
+    let getKingMoves game fromId =
         let adds = [1;-1;8;-8;9;-9;7;-7]
-        let enemyClr = game |> List.item fromId |> Option.map (fun r -> r.Color) |> Option.get |> getEnemy
+        let enemyClr = getColor game fromId |> Option.get |> getEnemy
         let enemies = game 
-                    |> List.choose id 
-                    |> List.mapi (fun i p -> (i,p)) 
-                    |> List.filter (fun (_,p) -> p.Color = enemyClr && p.Type <> King) 
-                    |> List.map (fun (i,_) -> getMoves game i)
+                    |> List.mapi (fun i p -> match p with | Some pi -> Some(i,pi) | None -> None) 
+                    |> List.choose id
+                    |> List.filter (fun (_,p) -> p.Color = enemyClr) 
+                    |> List.map (fun (i,_) -> getMoves game i true)
                     |> Seq.concat
                     |> List.ofSeq
         let isDangerous id =
@@ -191,22 +219,18 @@ module ChessActions =
         seq [for next in adds do if isDangerous (fromId + next) |> not then yield (fromId + next)]
 
 
-    let rec getMoves game fromId =
+    let getMoves2 game fromId =
         let piece = game |> List.item fromId
         match piece with
         | Some p -> 
             match p.Type with
-            | Pawn -> getPawnMoves game p fromId 
-            | Knight -> getKnightMoves fromId 
-            | Rook -> getRookMoves game fromId 
-            | Bishop -> getBishopMoves game fromId
-            | Queen -> getQueenMoves game fromId 
-            | King -> getKingMoves game fromId getMoves
+            | King -> getKingMoves game fromId
+            | _ -> getMoves game fromId false
         | None -> Seq.empty
 
 
     let isValidMoveById game fromId toId =
-        getMoves game fromId |> validateMoves toId
+        getMoves2 game fromId |> validateMoves toId
 
     let moveById game fromId toId =
         if isValidMoveById game fromId toId |> not then None

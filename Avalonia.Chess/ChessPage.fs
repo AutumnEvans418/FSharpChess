@@ -22,7 +22,14 @@ module ChessPage =
         }
     let init = { game = initialGame; fromPos = None; Moves=[]; Player = White }
 
-    type Msg = From of int | To of int | Reset | RemovePawns | Flip | CopyMoves
+    type Msg = 
+        | From of int 
+        | To of int 
+        | Reset 
+        | RemovePawns 
+        | Flip 
+        | CopyMoves
+        | EndGame
 
     let update (msg: Msg) (state: State) : State =
         match msg with
@@ -42,6 +49,7 @@ module ChessPage =
         | CopyMoves -> 
             Application.Current.Clipboard.SetTextAsync (state.Moves |> String.concat ",") |> ignore
             state
+        | EndGame -> {init with game = endGame }
     
     let view (state: State) (dispatch) =
         let fromPos = state.fromPos
@@ -69,6 +77,9 @@ module ChessPage =
                         Button.create [
                             Button.onClick (fun _ -> dispatch CopyMoves)
                             Button.content "Copy Moves"]
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch EndGame)
+                            Button.content "End Game"]
                     ]
                 ]
                 Grid.create [

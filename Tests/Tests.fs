@@ -74,6 +74,7 @@ module TestModule =
         [<TestCase("a1-a3,a3-b3", true, "move rook forward and then right")>]
         [<TestCase("a1-b2", false, "move rook diagnal fail")>]
         [<TestCase("b1-a3,a1-a4", false, "move knight in front of rook and try to jump fail")>]
+        [<TestCase("a1-b1", false, "move rook ontop of knight should fail")>]
         member _.``rook isvalidmoves`` move isValid action =
             validateMoves noPawnGame move isValid action  
 
@@ -82,6 +83,7 @@ module TestModule =
         [<TestCase("c1-h6,h6-c1", true, "move bishop diagnal and back")>]
         [<TestCase("c1-g5,g5-d8", true, "move bishop diagnal and take the queen")>]
         [<TestCase("c1-c4", false, "move bishop forward should fail")>]
+        [<TestCase("c1-d2,d2-e1", false, "move bishop on Ally should fail")>]
         member _.``bishop isvalidmoves`` move isValid action =
             validateMoves noPawnGame move isValid action  
 
@@ -89,8 +91,20 @@ module TestModule =
         [<TestCase("d2-d4,d1-d3", false, "move pawn and then king 2 should fail")>]
         [<TestCase("b8-c6,c6-b4,d2-d4,d1-d2,d2-d3", false, "move enemy kight and king can't move in danger")>]
         [<TestCase("d2-d4,d1-d2,b7-b6,c8-a6,d2-d3", false, "move enemy bishop and king can't move in danger")>]
+        [<TestCase("d2-d4,d1-d2,a7-a5,a8-a6,a6-b6,b6-b3,d2-d3", false, "move enemy rook and king can't move in danger")>]
+        [<TestCase("d2-d4,d1-d2,d2-d3,d3-c3,d7-d5,d8-d6,c3-b4", false, "move enemy queen. king can't move in danger")>]
+        [<TestCase("d2-d4,d1-d2,c7-c5,d8-b6,d2-c3,c3-c4", true, "king can move in front of enemy pawn")>]
+        [<TestCase("d2-d4,c7-c5,d1-d2,d2-d3,d3-c3,c3-c4,c4-b4", false, "king can't move diag of enemy pawn")>]
         member _.``king isvalidmoves`` move isValid action =
             validateMoves initialGame move isValid action  
+
+        [<TestCase("e8-d7", false, "move king in front of queen fail")>]
+        [<TestCase("e1-d2", false, "move king in front of queen fail")>]
+        [<TestCase("e1-d1", false, "move king on ally queen fail")>]
+        [<TestCase("e8-d8", false, "move king on ally queen fail")>]
+        [<TestCase("d8-d4,e1-f2", false, "move queen and king in danger should fail")>]
+        member _.``king endgame isvalidmoves`` move isValid action =
+            validateMoves endGame move isValid action
 
         [<TestCase("a1", "Rook")>]
         [<TestCase("a8", "Rook")>]
