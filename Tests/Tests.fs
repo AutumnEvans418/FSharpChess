@@ -85,6 +85,13 @@ module TestModule =
         member _.``bishop isvalidmoves`` move isValid action =
             validateMoves noPawnGame move isValid action  
 
+        [<TestCase("d2-d3,d1-d2", true, "move pawn and then king 1")>]
+        [<TestCase("d2-d4,d1-d3", false, "move pawn and then king 2 should fail")>]
+        [<TestCase("b8-c6,c6-b4,d2-d4,d1-d2,d2-d3", false, "move enemy kight and king can't move in danger")>]
+        [<TestCase("d2-d4,d1-d2,b7-b6,c8-a6,d2-d3", false, "move enemy bishop and king can't move in danger")>]
+        member _.``king isvalidmoves`` move isValid action =
+            validateMoves initialGame move isValid action  
+
         [<TestCase("a1", "Rook")>]
         [<TestCase("a8", "Rook")>]
         [<TestCase("h1", "Rook")>]

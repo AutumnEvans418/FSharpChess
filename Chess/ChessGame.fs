@@ -163,22 +163,32 @@ module ChessActions =
             yield! getMoves -7
         }
 
+    let getQueenMoves game fromId =
+        getBishopMoves game fromId |> Seq.append (getRookMoves game fromId)
+
+    let getKingMoves game fromId =
+        let adds = [1;-1;8;-8;9;-9;7;-7]
+        seq [for next in adds -> fromId + next]
+
     let validateMoves toId moves =
         moves |> Seq.contains toId
 
-    let isValidMoveById game fromId toId =
+    let getMoves game fromId =
         let piece = game |> List.item fromId
-        let toCell = game |> List.item toId
-        match piece, toCell with
-        | None, _ -> false
-        | Some p, Some c when p.Color = c.Color -> false
-        | Some p, c -> 
+        match piece with
+        | Some p -> 
             match p.Type with
-            | Pawn -> getPawnMoves game p fromId |> validateMoves toId
-            | Knight -> getKnightMoves fromId |> validateMoves toId
-            | Rook -> getRookMoves game fromId |> validateMoves toId
-            | Bishop -> getBishopMoves game fromId |> validateMoves toId
-            | _ -> true
+            | Pawn -> getPawnMoves game p fromId 
+            | Knight -> getKnightMoves fromId 
+            | Rook -> getRookMoves game fromId 
+            | Bishop -> getBishopMoves game fromId
+            | Queen -> getQueenMoves game fromId 
+            | King -> getKingMoves game fromId
+        | None -> Seq.empty
+
+
+    let isValidMoveById game fromId toId =
+        getMoves game fromId |> validateMoves toId
 
     let moveById game fromId toId =
         if isValidMoveById game fromId toId |> not then None
