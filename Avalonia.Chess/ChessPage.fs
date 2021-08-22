@@ -2,6 +2,7 @@ namespace Avalonia.Chess
 
 open Chess.Pieces
 open Avalonia.FuncUI.Components
+open Avalonia
 
 module ChessPage =
     open Avalonia.Controls
@@ -10,15 +11,18 @@ module ChessPage =
     open Chess.ChessParser
     open Chess.ChessActions
     open Chess.ChessGrid
+
     
+
     type State = { 
         game : Piece option list
         fromPos : int option
         Moves: string list
+        Player: Color
         }
-    let init = { game = initialGame; fromPos = None; Moves=[] }
+    let init = { game = initialGame; fromPos = None; Moves=[]; Player = White }
 
-    type Msg = From of int | To of int | Reset
+    type Msg = From of int | To of int | Reset | RemovePawns | Flip | CopyMoves
 
     let update (msg: Msg) (state: State) : State =
         match msg with
@@ -30,9 +34,14 @@ module ChessPage =
             | Some game ->
                 let fromStr = idToPos fromId
                 let toStr = idToPos v
-                { state with fromPos = None; game = game; Moves = state.Moves |> List.append [sprintf "%s-%s" fromStr toStr] }
+                { state with fromPos = None; game = game; Moves = [sprintf "%s-%s" fromStr toStr] |> List.append state.Moves }
             | None -> { state with fromPos = None;}
         | Reset -> init
+        | RemovePawns -> { init with game = noPawnGame }
+        | Flip -> { state with Player = match state.Player with | White -> Black | Black -> White }
+        | CopyMoves -> 
+            Application.Current.Clipboard.SetTextAsync (state.Moves |> String.concat ",") |> ignore
+            state
     
     let view (state: State) (dispatch) =
         let fromPos = state.fromPos
@@ -50,6 +59,16 @@ module ChessPage =
                             Button.onClick (fun _ -> dispatch Reset)
                             Button.content "Reset"
                         ]
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch RemovePawns)
+                            Button.content "Remove Pawns"
+                        ]
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch Flip)
+                            Button.content "Flip"]
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch CopyMoves)
+                            Button.content "Copy Moves"]
                     ]
                 ]
                 Grid.create [
@@ -59,20 +78,26 @@ module ChessPage =
                     Grid.columnDefinitions (System.String.Join(",",[for r in 0..7 -> "*"]))
                     Grid.children [
                         for id in 0..63 -> 
+                            let idStr = sprintf "(%s)" (idToPos id)
+                            let x,y = idToXY id
+
+                            let background, forground = match fromPos, state.game.[id] |> Option.map (fun r -> r.Color) with 
+                                                        | Some pos, _ when pos = id -> "lightblue","black"
+                                                        | Some pos, _ when isValidMoveById state.game pos id -> "yellow","black"
+                                                        | _, Some White -> "lightgray","black"
+                                                        | _, Some Black -> "black","white"
+                                                        | _, None -> "gray","white"
+                            
+                            let row = match state.Player with
+                                        | White -> 7-y
+                                        | Black -> y
+
                             Button.create [
-                                Button.background (match fromPos, state.game.[id] |> Option.map (fun r -> r.Color) with 
-                                                   | Some pos, _ when pos = id -> "lightblue"
-                                                   | Some pos, _ when isValidMoveById state.game pos id -> "yellow"
-                                                   | _, Some White -> "lightgray"
-                                                   | _, Some Black -> "black"
-                                                   | _, None -> "gray")
-                                Button.content (state.game.[id] |> Option.fold (fun _ a -> a.Name) "")
-                                Button.row (
-                                    let x,y = idToXY id
-                                    y)
-                                Button.column (
-                                    let x,y = idToXY id
-                                    x)
+                                Button.background background
+                                Button.foreground forground
+                                Button.content (state.game.[id] |> Option.fold (fun _ a -> a.Name + " " + idStr) idStr)
+                                Button.row row
+                                Button.column x
                                 match fromPos, state.game.[id] with 
                                 | Some r, _ -> Button.onClick (fun _ -> dispatch (To id)) 
                                 | None, Some a -> Button.onClick (fun _ -> dispatch (From id))

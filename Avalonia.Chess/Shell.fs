@@ -71,7 +71,7 @@ module Shell =
     type MainWindow() as this =
         inherit HostWindow()
         do
-            base.Title <- "Full App"
+            base.Title <- "SIMP Chess App"
             base.Width <- 800.0
             base.Height <- 600.0
             base.MinWidth <- 800.0

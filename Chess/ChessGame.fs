@@ -90,20 +90,23 @@ module ChessActions =
         | White -> 1
         | Black -> -1
 
-    let getPawnMoves game piece toPiece fromId toId =
+    let getPawnMoves game piece fromId =
         let i = index piece.Color
         seq {
             let id = fromId + 8 * i
             let id16 = fromId + 16*i
-            if Option.isNone toPiece then yield id;
+
+            let attack1 = fromId + 9*i
+            let attack2 = fromId + 7*i
+
+            let isFree id = game |> List.item id |> Option.isNone 
+
+            if isFree id then yield id;
             if piece.HasMoved |> not && game |> List.item id |> Option.isNone && game |> List.item id16 |> Option.isNone then yield id16;
-            if Option.isSome toPiece && (fromId + 9*i = toId || fromId + 7*i=toId) then yield toId }
-            
-
-    let validatePawn game piece toPiece (fromId:int) toId =
-        let moves = getPawnMoves game piece toPiece fromId toId
-        moves |> Seq.contains toId
-
+            if isFree attack1 |> not then yield attack1
+            if isFree attack2 |> not then yield attack2
+        }
+           
     let getKnightMoves fromId =
         let row = getRow fromId
         seq {
@@ -116,28 +119,51 @@ module ChessActions =
             if getRow (fromId+6) = row + 1 then yield fromId + 6;
             if getRow (fromId-6) = row - 1 then yield fromId - 6;}
 
-    let validateKnight (fromId:int) toId =
-        let moves = getKnightMoves fromId
-        moves |> Seq.contains toId
-
-    let getRookMoves game fromId toId =
+    let getRookMoves game fromId =
         
-        let inColumn = (fromId - toId) % 8 = 0
-        let inRow = getRow fromId = getRow toId
-        let unfoldFunc next a =
+        let inColumn = fun toId -> (fromId - toId) % 8 = 0
+        let inRow = fun toId -> getRow fromId = getRow toId
+        let unfoldFunc next isValid a  =
             match a with
-            | Some id -> if id < 64 && id >= 0 && game |> List.item id |> Option.isNone then Some(a, Some(id+next)) else Some(a, None)
+            | Some id when isValid id -> 
+                if id < 64 && id >= 0 && game |> List.item id |> Option.isNone then 
+                    Some(a, Some(id+next)) 
+                else 
+                    Some(a, None)
+            | Some _ -> None
             | None -> None
 
         seq {
-            if inColumn then yield! Seq.unfold (unfoldFunc 8) (Some(fromId + 8)) |> Seq.choose id
-            if inColumn then yield! Seq.unfold (unfoldFunc -8) (Some(fromId - 8)) |> Seq.choose id
-            if inRow then yield! Seq.unfold (unfoldFunc 1) (Some(fromId+1)) |> Seq.choose id
-            if inRow then yield! Seq.unfold (unfoldFunc -1) (Some(fromId-1)) |> Seq.choose id
+            // move forward until you hit something
+            yield! Seq.unfold (unfoldFunc 8 inColumn) (Some(fromId + 8))  |> Seq.choose id
+            yield! Seq.unfold (unfoldFunc -8 inColumn) (Some(fromId - 8))  |> Seq.choose id
+
+            // move sideways until you hit something
+            yield! Seq.unfold (unfoldFunc 1 inRow) (Some(fromId+1)) |> Seq.choose id
+            yield! Seq.unfold (unfoldFunc -1 inRow) (Some(fromId-1)) |> Seq.choose id
         }
 
-    let validateRook game fromId toId =
-        let moves = getRookMoves game fromId toId
+    let getBishopMoves game fromId =
+        let unfoldFunc next a  =
+            match a with
+            | Some id when Math.Abs(getRow (id) - getRow (id-next)) = 1 -> 
+                if id < 64 && id >= 0 && game |> List.item id |> Option.isNone then 
+                    Some(a, Some(id+next)) 
+                else 
+                    Some(a, None)
+            | Some _ -> None
+            | None -> None
+
+        let getMoves skip = Seq.unfold (unfoldFunc skip) (Some(fromId+skip)) |> Seq.choose id
+
+        seq {
+            yield! getMoves 9
+            yield! getMoves 7
+            yield! getMoves -9
+            yield! getMoves -7
+        }
+
+    let validateMoves toId moves =
         moves |> Seq.contains toId
 
     let isValidMoveById game fromId toId =
@@ -148,9 +174,10 @@ module ChessActions =
         | Some p, Some c when p.Color = c.Color -> false
         | Some p, c -> 
             match p.Type with
-            | Pawn -> validatePawn game p c fromId toId
-            | Knight -> validateKnight fromId toId
-            | Rook -> validateRook game fromId toId
+            | Pawn -> getPawnMoves game p fromId |> validateMoves toId
+            | Knight -> getKnightMoves fromId |> validateMoves toId
+            | Rook -> getRookMoves game fromId |> validateMoves toId
+            | Bishop -> getBishopMoves game fromId |> validateMoves toId
             | _ -> true
 
     let moveById game fromId toId =

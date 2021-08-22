@@ -61,8 +61,8 @@ module TestModule =
         [<TestCase("a2-a4,b7-b5", true, "white pawn move 2. black pawn move 2")>]
         [<TestCase("a2-a4,b7-b5,a4-b5", true, "white pawn move 2. black pawn move 2. white takes black")>]
         [<TestCase("a2-a4,a7-a5,a4-a5", false, "white pawn move 2. black pawn move 2. white takes black invalid")>]
-        [<TestCase("c1-b3,b2-b4", false, "knight move. white pawn move 2, but can't jump knight")>]
-        [<TestCase("c8-d6,d6-c4,c2-c4", false, "black knight move. white pawn move 2, but can't land on knight")>]
+        [<TestCase("b1-a3,a2-a4", false, "knight move. white pawn move 2, but can't jump knight")>]
+        [<TestCase("b8-c6,c6-b4,b2-b4", false, "black knight move. white pawn move 2, but can't land on knight")>]
         [<TestCase("b1-b3", false, "white knight move wrong")>]
         [<TestCase("b1-b5", false, "white knight move wrong")>]
         [<TestCase("b1-a3", true, "white knight move left")>]
@@ -73,8 +73,16 @@ module TestModule =
         [<TestCase("a1-a3", true, "move rook forward")>]
         [<TestCase("a1-a3,a3-b3", true, "move rook forward and then right")>]
         [<TestCase("a1-b2", false, "move rook diagnal fail")>]
-        [<TestCase("c1-a2,a1-a3", false, "move knight in front of rook and try to jump fail")>]
+        [<TestCase("b1-a3,a1-a4", false, "move knight in front of rook and try to jump fail")>]
         member _.``rook isvalidmoves`` move isValid action =
+            validateMoves noPawnGame move isValid action  
+
+        [<TestCase("c1-e3,e3-c5,c5-a3,a3-c1", true, "move bishop in diamond")>]
+        [<TestCase("b1-d2,c1-e3", false, "move knight in way of bishop should fail")>]
+        [<TestCase("c1-h6,h6-c1", true, "move bishop diagnal and back")>]
+        [<TestCase("c1-g5,g5-d8", true, "move bishop diagnal and take the queen")>]
+        [<TestCase("c1-c4", false, "move bishop forward should fail")>]
+        member _.``bishop isvalidmoves`` move isValid action =
             validateMoves noPawnGame move isValid action  
 
         [<TestCase("a1", "Rook")>]
