@@ -166,14 +166,32 @@ module ChessActions =
     let getQueenMoves game fromId =
         getBishopMoves game fromId |> Seq.append (getRookMoves game fromId)
 
-    let getKingMoves game fromId =
-        let adds = [1;-1;8;-8;9;-9;7;-7]
-        seq [for next in adds -> fromId + next]
+    let getEnemy color =
+        match color with
+        | White -> Black
+        | Black -> White
 
+    
     let validateMoves toId moves =
         moves |> Seq.contains toId
 
-    let getMoves game fromId =
+    let getKingMoves game fromId getMoves =
+        let adds = [1;-1;8;-8;9;-9;7;-7]
+        let enemyClr = game |> List.item fromId |> Option.map (fun r -> r.Color) |> Option.get |> getEnemy
+        let enemies = game 
+                    |> List.choose id 
+                    |> List.mapi (fun i p -> (i,p)) 
+                    |> List.filter (fun (_,p) -> p.Color = enemyClr && p.Type <> King) 
+                    |> List.map (fun (i,_) -> getMoves game i)
+                    |> Seq.concat
+                    |> List.ofSeq
+        let isDangerous id =
+            validateMoves id enemies
+            
+        seq [for next in adds do if isDangerous (fromId + next) |> not then yield (fromId + next)]
+
+
+    let rec getMoves game fromId =
         let piece = game |> List.item fromId
         match piece with
         | Some p -> 
@@ -183,7 +201,7 @@ module ChessActions =
             | Rook -> getRookMoves game fromId 
             | Bishop -> getBishopMoves game fromId
             | Queen -> getQueenMoves game fromId 
-            | King -> getKingMoves game fromId
+            | King -> getKingMoves game fromId getMoves
         | None -> Seq.empty
 
 
