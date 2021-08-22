@@ -95,6 +95,7 @@ module TestModule =
         [<TestCase("d2-d4,d1-d2,d2-d3,d3-c3,d7-d5,d8-d6,c3-b4", false, "move enemy queen. king can't move in danger")>]
         [<TestCase("d2-d4,d1-d2,c7-c5,d8-b6,d2-c3,c3-c4", true, "king can move in front of enemy pawn")>]
         [<TestCase("d2-d4,c7-c5,d1-d2,d2-d3,d3-c3,c3-c4,c4-b4", false, "king can't move diag of enemy pawn")>]
+        [<TestCase("d1-d2", false, "king can't move on ally pawn")>]
         member _.``king isvalidmoves`` move isValid action =
             validateMoves initialGame move isValid action  
 
