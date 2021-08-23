@@ -27,4 +27,8 @@
     <ItemGroup>
       <ProjectReference Include="..\Chess\Chess.fsproj" />
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Images\" />
+    </ItemGroup>
 </Project>

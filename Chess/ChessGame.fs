@@ -89,6 +89,7 @@ module ChessGrid =
 module ChessActions =
     open Pieces
     open ChessParser
+    let inRange id = id < 64 && id >= 0
 
     let index color = 
         match color with
@@ -127,8 +128,12 @@ module ChessActions =
             if getRow (fromId+6) = row + 1 then yield fromId + 6;
             if getRow (fromId-6) = row - 1 then yield fromId - 6;}
 
+
     let getColor game fromId =
-        game |> List.item fromId |> Option.map (fun r -> r.Color)
+        if inRange fromId then
+            game |> List.item fromId |> Option.map (fun r -> r.Color)
+        else
+            None
     let getEnemy color =
          match color with
          | White -> Black
@@ -139,7 +144,6 @@ module ChessActions =
 
     let MoveAndCheckForPieces game isEnemyColor next isValid a  =
         
-        let inRange id = id < 64 && id >= 0
 
         match a with
         | Some id when inRange id && isValid id next -> 
@@ -216,7 +220,11 @@ module ChessActions =
         let isDangerous id =
             validateMoves id enemies
             
-        seq [for next in adds do if isDangerous (fromId + next) |> not then yield (fromId + next)]
+        seq [for next in adds do 
+                let id = fromId + next
+                if isDangerous id |> not && isEnemyColor game fromId id then 
+                    yield id
+            ]
 
 
     let getMoves2 game fromId =
@@ -247,3 +255,8 @@ module ChessActions =
         let toId = getXY toPos |> xYToId
 
         moveById game fromId toId
+
+module ChessIcons =
+    open Pieces
+    let getIcon (piece:Piece) =
+        piece.Name + piece.Color.ToString() + ".png"
