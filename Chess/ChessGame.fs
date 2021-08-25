@@ -214,14 +214,12 @@ module ChessActions =
                     |> List.ofSeq
         validateMoves toId enemies
 
-    let isKingChecked game color =
-        
-        [for id in 0..63 do 
+    let isKingChecked game color: bool =
+        [0..63] |> List.exists (fun id -> 
             let piece = game |> List.item id
             match piece with
-            | Some p when p.Type = King && p.Color = color && isPieceInCheck game id id -> yield (id, p)
-            | Some _ -> ()
-            | None -> ()]
+            | Some p -> p.Type = King && p.Color = color && isPieceInCheck game id id
+            | None -> false)
 
     
                 
@@ -255,14 +253,11 @@ module ChessActions =
         match color with 
         | None -> moves
         | Some clr ->
-            let checks = isKingChecked game clr
-            if checks.IsEmpty then moves
+            if isKingChecked game clr |> not then moves
             else
-                let id, piece = checks |> List.head
                 seq [for move in moves do 
                         let nGame = moveById game fromId move
-                        let stillChecked = isKingChecked nGame clr
-                        if stillChecked.IsEmpty then yield move
+                        if isKingChecked nGame clr |> not then yield move
                     ]
 
     let getMoves2 game fromId =
@@ -279,7 +274,25 @@ module ChessActions =
     let isValidMoveById game fromId toId =
         getMoves2 game fromId |> validateMoves toId
 
+    type EndGame =
+        | Winner of Color
+        | Tie
+        | Na
     
+    let getMovesByColor game color =
+        [0..63] 
+        |> List.map (fun i -> (i, getColor game i)) 
+        |> List.filter (fun (i, clr) -> match clr with | Some c -> c = color | _ -> false)
+        |> List.map (fun (i,clr) -> (i, getMoves2 game i))
+
+    let gameOver game = 
+        let noBlackMoves = getMovesByColor game Black |> List.exists (fun (i,l) -> l |> Seq.length > 0) |> not
+        let noWhiteMoves = getMovesByColor game White |> List.exists (fun (i,l) -> l |> Seq.length > 0) |> not
+
+        if noWhiteMoves && isKingChecked game White then Winner Black
+        else if noBlackMoves && isKingChecked game Black then Winner Black
+        else if noWhiteMoves || noBlackMoves then Tie
+        else Na
 
 module ChessIcons =
     open Pieces
