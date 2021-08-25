@@ -18,31 +18,22 @@ module Shell =
 
     type State =
         /// store the child state in your main state
-        { aboutState: About.State; counterState: ChessPage.State;}
+        {counterState: ChessPage.State;}
 
     type Msg =
-        | AboutMsg of About.Msg
         | CounterMsg of ChessPage.Msg
 
     let init =
-        let aboutState, aboutCmd = About.init
         let counterState = ChessPage.init
-        { aboutState = aboutState; counterState = counterState },
+        { counterState = counterState },
         /// If your children controls don't emit any commands
         /// in the init function, you can just return Cmd.none
         /// otherwise, you can use a batch operation on all of them
         /// you can add more init commands as you need
-        Cmd.batch [ aboutCmd ]
+        Cmd.none
 
     let update (msg: Msg) (state: State): State * Cmd<_> =
         match msg with
-        | AboutMsg bpmsg ->
-            let aboutState, cmd =
-                About.update bpmsg state.aboutState
-            { state with aboutState = aboutState },
-            /// map the message to the kind of message 
-            /// your child control needs to handle
-            Cmd.map AboutMsg cmd
         | CounterMsg countermsg ->
             let counterMsg =
                 ChessPage.update countermsg state.counterState
@@ -60,9 +51,7 @@ module Shell =
                           [ TabItem.create
                                 [ TabItem.header "Chess Game"
                                   TabItem.content (ChessPage.view state.counterState (CounterMsg >> dispatch)) ]
-                            TabItem.create
-                                [ TabItem.header "About"
-                                  TabItem.content (About.view state.aboutState (AboutMsg >> dispatch)) ] ] ] ] ]
+                             ] ] ] ]
 
     /// This is the main window of your application
     /// you can do all sort of useful things here like setting heights and widths

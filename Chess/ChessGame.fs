@@ -236,19 +236,16 @@ module ChessActions =
             | _ -> getMoves game fromId false
         | None -> Seq.empty
 
-
     let isValidMoveById game fromId toId =
         getMoves2 game fromId |> validateMoves toId
 
     let moveById game fromId toId =
-        if isValidMoveById game fromId toId |> not then None
-        else
         let piece = game |> List.item fromId |> Option.get
         
-        Some [for id in 0..63 -> 
-                if fromId = id then None
-                else if toId = id then Some {piece with HasMoved = true}
-                else game.[id]]
+        [for id in 0..63 -> 
+            if fromId = id then None
+            else if toId = id then Some {piece with HasMoved = true}
+            else game.[id]]
 
     let moveByXY game fromPos toPos = 
         let fromId = getXY fromPos |> xYToId

@@ -22,10 +22,10 @@ module TestModule =
         let valid, game = moves |> List.fold (fun (valid, game) (fromPos, toPos) -> 
                                     let fromId = getXY fromPos |> xYToId
                                     let toId = getXY toPos |> xYToId
-                                    let result = isValidMoveById (game |> Option.get) fromId toId
-                                    let gameMove = moveById (game |> Option.get) fromId toId 
+                                    let result = isValidMoveById (game) fromId toId
+                                    let gameMove = moveById (game) fromId toId 
                                     (valid && result, gameMove)
-                                    ) (true, Some game) 
+                                    ) (true, game) 
 
         Assert.AreEqual(isValid, valid, action) 
 
@@ -107,6 +107,13 @@ module TestModule =
         member _.``king endgame isvalidmoves`` move isValid action =
             validateMoves endGame move isValid action
 
+        [<TestCase("d2-d4,c7-c6,d1-d2,d8-a5,b2-b3", false, "Black queen checks white king. pawn doesn't block should be false")>]
+        [<TestCase("d2-d4,g8-f6,d4-d5,f6-e4,d5-d6,e4-c3,e2-e3", false, "Black knight checks white king. pawn doesn't block should be false")>]
+        [<TestCase("d2-d4,c7-c6,d1-d2,d8-a5,c2-c3", true, "Black queen checks white king. pawn blocks should be valid")>]
+        [<TestCase("d2-d4,c7-c6,d1-d2,d8-a5,d2-d3", true, "Black queen checks white king. white king moves should be valid")>]
+        member _.``king in check should limit valid moves`` move isValid action =
+            validateMoves initialGame move isValid action
+
         [<TestCase("a1", "Rook")>]
         [<TestCase("a8", "Rook")>]
         [<TestCase("h1", "Rook")>]
@@ -118,13 +125,16 @@ module TestModule =
         member _.``Lookup an initial game piece`` str result =
             lookup initialGame str |> Option.fold (fun _ v -> v.Name) "None" |> should equal result
 
+
+
+
         [<TestCase("a2-a3", "a3", "Pawn")>]
         [<TestCase("a2-a3", "a2", "None")>]
         [<TestCase("a2-a3", "d8", "Queen")>]
         [<TestCase("a2-a3", "h8", "Rook")>]
         member _.MakeAMove str result piece =
             let frm,tto = parseMove str
-            let newBoard = moveByXY initialGame frm tto |> Option.get
+            let newBoard = moveByXY initialGame frm tto
                
             lookup newBoard result |> Option.fold (fun _ v -> v.Name) "None" |> should equal piece
 

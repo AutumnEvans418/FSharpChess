@@ -30,19 +30,20 @@ module ChessPage =
         | Flip 
         | CopyMoves
         | EndGame
+        | Undo
 
     let update (msg: Msg) (state: State) : State =
         match msg with
         | From v -> { state with fromPos = Some v }
         | To v -> 
             let fromId = state.fromPos |> Option.get
-            let moveAction = moveById state.game fromId v
-            match moveAction with
-            | Some game ->
+            if isValidMoveById state.game fromId v then
+                let moveAction = moveById state.game fromId v
                 let fromStr = idToPos fromId
                 let toStr = idToPos v
-                { state with fromPos = None; game = game; Moves = [sprintf "%s-%s" fromStr toStr] |> List.append state.Moves }
-            | None -> { state with fromPos = None;}
+                { state with fromPos = None; game = moveAction; Moves = [sprintf "%s-%s" fromStr toStr] |> List.append state.Moves }
+            else 
+                { state with fromPos = None }
         | Reset -> init
         | RemovePawns -> { init with game = noPawnGame }
         | Flip -> { state with Player = match state.Player with | White -> Black | Black -> White }
@@ -50,7 +51,21 @@ module ChessPage =
             Application.Current.Clipboard.SetTextAsync (state.Moves |> String.concat ",") |> ignore
             state
         | EndGame -> {init with game = endGame }
+        | Undo -> 
+            let moveStr = state.Moves.[state.Moves.Length-1]
+            let tos,froms = parseMove moveStr
+            let toId = getXY tos |> xYToId
+            let fromId = getXY froms |> xYToId
+            let moves = state.Moves |> List.filter (fun r -> r = moveStr)
+            let action = moveById state.game fromId toId 
+            {state with Moves = moves; game = action}
     
+    let button dispatch name action =
+        Button.create [
+            Button.onClick (fun _ -> dispatch action)
+            Button.content (name |> string)
+        ]
+
     let view (state: State) (dispatch) =
         let fromPos = state.fromPos
         //let fromPiece = fromPos |> Option.map (fun r -> state.game.[r]) |> Option.flatten |> Option.map (fun r -> r.Color)
@@ -61,25 +76,15 @@ module ChessPage =
                 StackPanel.create [
                     Grid.row 0
                     Grid.column 0
+                    StackPanel.margin 10.
+                    StackPanel.spacing 10.
                     StackPanel.orientation Orientation.Horizontal
                     StackPanel.children [
-                        Button.create [
-                            Button.onClick (fun _ -> dispatch Reset)
-                            Button.content "Reset"
-                        ]
-                        Button.create [
-                            Button.onClick (fun _ -> dispatch RemovePawns)
-                            Button.content "Remove Pawns"
-                        ]
-                        Button.create [
-                            Button.onClick (fun _ -> dispatch Flip)
-                            Button.content "Flip"]
-                        Button.create [
-                            Button.onClick (fun _ -> dispatch CopyMoves)
-                            Button.content "Copy Moves"]
-                        Button.create [
-                            Button.onClick (fun _ -> dispatch EndGame)
-                            Button.content "End Game"]
+                        button dispatch "Reset" Reset
+                        button dispatch "No Pawn" RemovePawns
+                        button dispatch "Flip" Flip
+                        button dispatch "Copy Moves" CopyMoves
+                        button dispatch "End Game" EndGame
                     ]
                 ]
                 Grid.create [
@@ -97,7 +102,11 @@ module ChessPage =
                                                         | Some pos, _ when isValidMoveById state.game pos id -> "yellow","black"
                                                         | _, Some White -> "lightgray","black"
                                                         | _, Some Black -> "black","white"
-                                                        | _, None -> "gray","white"
+                                                        | _, None -> 
+                                                            if (id + (y % 2)) % 2 = 0 then
+                                                                "gray","white"
+                                                            else
+                                                                "lightyellow","black"
                             
                             let row = match state.Player with
                                         | White -> 7-y
