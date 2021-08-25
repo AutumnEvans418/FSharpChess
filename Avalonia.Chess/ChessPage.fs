@@ -52,13 +52,15 @@ module ChessPage =
             state
         | EndGame -> {init with game = endGame }
         | Undo -> 
-            let moveStr = state.Moves.[state.Moves.Length-1]
-            let tos,froms = parseMove moveStr
-            let toId = getXY tos |> xYToId
-            let fromId = getXY froms |> xYToId
-            let moves = state.Moves |> List.filter (fun r -> r = moveStr)
-            let action = moveById state.game fromId toId 
-            {state with Moves = moves; game = action}
+            if state.Moves.IsEmpty then state
+            else
+                let moveStr = state.Moves.[state.Moves.Length-1]
+                let tos,froms = parseMove moveStr
+                let toId = getXY tos |> xYToId
+                let fromId = getXY froms |> xYToId
+                let moves = state.Moves |> List.filter (fun r -> r <> moveStr)
+                let action = moveById state.game fromId toId 
+                {state with Moves = moves; game = action}
     
     let button dispatch name action =
         Button.create [
@@ -85,6 +87,7 @@ module ChessPage =
                         button dispatch "Flip" Flip
                         button dispatch "Copy Moves" CopyMoves
                         button dispatch "End Game" EndGame
+                        button dispatch "Undo" Undo
                     ]
                 ]
                 Grid.create [

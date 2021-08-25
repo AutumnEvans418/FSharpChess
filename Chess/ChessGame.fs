@@ -143,8 +143,6 @@ module ChessActions =
         getColor game fromId <> getColor game id
 
     let MoveAndCheckForPieces game isEnemyColor next isValid a  =
-        
-
         match a with
         | Some id when inRange id && isValid id next -> 
             if emptySpace game id then 
@@ -187,8 +185,6 @@ module ChessActions =
     let getQueenMoves game fromId =
         getBishopMoves game fromId |> Seq.append (getRookMoves game fromId)
 
- 
-
     
     let validateMoves toId moves =
         moves |> Seq.contains toId
@@ -207,8 +203,7 @@ module ChessActions =
             | _ -> Seq.empty
         | None -> Seq.empty
 
-    let getKingMoves game fromId =
-        let adds = [1;-1;8;-8;9;-9;7;-7]
+    let isPieceInCheck game fromId toId =
         let enemyClr = getColor game fromId |> Option.get |> getEnemy
         let enemies = game 
                     |> List.mapi (fun i p -> match p with | Some pi -> Some(i,pi) | None -> None) 
@@ -217,31 +212,33 @@ module ChessActions =
                     |> List.map (fun (i,_) -> getMoves game i true)
                     |> Seq.concat
                     |> List.ofSeq
-        let isDangerous id =
-            validateMoves id enemies
+        validateMoves toId enemies
+
+    let isKingChecked game color =
+        
+        [for id in 0..63 do 
+            let piece = game |> List.item id
+            match piece with
+            | Some p when p.Type = King && p.Color = color && isPieceInCheck game id id -> yield (id, p)
+            | Some _ -> ()
+            | None -> ()]
+
+    
+                
             
+
+    let getKingMoves game fromId =
+        let adds = [1;-1;8;-8;9;-9;7;-7]
+        let check = isPieceInCheck game fromId
         seq [for next in adds do 
                 let id = fromId + next
-                if isDangerous id |> not && isEnemyColor game fromId id then 
+                if check id |> not && isEnemyColor game fromId id then 
                     yield id
             ]
 
-
-    let getMoves2 game fromId =
-        let piece = game |> List.item fromId
-        match piece with
-        | Some p -> 
-            match p.Type with
-            | King -> getKingMoves game fromId
-            | _ -> getMoves game fromId false
-        | None -> Seq.empty
-
-    let isValidMoveById game fromId toId =
-        getMoves2 game fromId |> validateMoves toId
-
     let moveById game fromId toId =
         let piece = game |> List.item fromId |> Option.get
-        
+    
         [for id in 0..63 -> 
             if fromId = id then None
             else if toId = id then Some {piece with HasMoved = true}
@@ -252,6 +249,37 @@ module ChessActions =
         let toId = getXY toPos |> xYToId
 
         moveById game fromId toId
+
+    let pruneMoves game fromId moves =
+        let color = getColor game fromId
+        match color with 
+        | None -> moves
+        | Some clr ->
+            let checks = isKingChecked game clr
+            if checks.IsEmpty then moves
+            else
+                let id, piece = checks |> List.head
+                seq [for move in moves do 
+                        let nGame = moveById game fromId move
+                        let stillChecked = isKingChecked nGame clr
+                        if stillChecked.IsEmpty then yield move
+                    ]
+
+    let getMoves2 game fromId =
+        let pruner = pruneMoves game fromId
+
+        let piece = game |> List.item fromId
+        match piece with
+        | Some p -> 
+            match p.Type with
+            | King -> getKingMoves game fromId |> pruner
+            | _ -> getMoves game fromId false |> pruner
+        | None -> Seq.empty
+
+    let isValidMoveById game fromId toId =
+        getMoves2 game fromId |> validateMoves toId
+
+    
 
 module ChessIcons =
     open Pieces
