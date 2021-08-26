@@ -19,8 +19,9 @@ module ChessPage =
         fromPos : int option
         Moves: string list
         Player: Color
+        GameOver: EndGame
         }
-    let init = { game = initialGame; fromPos = None; Moves=[]; Player = White }
+    let init = { game = initialGame; fromPos = None; Moves=[]; Player = White; GameOver = Na }
 
     type Msg = 
         | From of int 
