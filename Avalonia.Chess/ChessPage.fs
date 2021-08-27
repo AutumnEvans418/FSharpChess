@@ -42,7 +42,7 @@ module ChessPage =
                 let moveAction = moveById state.game fromId v
                 let fromStr = idToPos fromId
                 let toStr = idToPos v
-                { state with fromPos = None; game = moveAction; Moves = [sprintf "%s-%s" fromStr toStr] |> List.append state.Moves }
+                { state with fromPos = None; game = moveAction; Moves = [sprintf "%s-%s" fromStr toStr] |> List.append state.Moves; GameOver = gameOver moveAction }
             else 
                 { state with fromPos = None }
         | Reset -> init
@@ -69,71 +69,100 @@ module ChessPage =
             Button.content (name |> string)
         ]
 
-    let view (state: State) (dispatch) =
+    let gameOverView (state: State) =
+        StackPanel.create [
+            Grid.row 1
+            Grid.column 0
+            StackPanel.verticalAlignment VerticalAlignment.Center
+            StackPanel.horizontalAlignment HorizontalAlignment.Center
+            StackPanel.children [
+                TextBlock.create [
+                    let txt = match state.GameOver with
+                                | Winner clr -> sprintf "Player %O Won!" clr
+                                | Tie -> "Tie!"
+                                | _ -> ""
+                    TextBlock.text txt
+                ]
+            ]
+        ]
+
+    let chessBoard (state: State) (dispatch) =
         let fromPos = state.fromPos
+
+        Grid.create [
+            Grid.row 1
+            Grid.column 0
+            Grid.rowDefinitions (System.String.Join(",",[for r in 0..7 -> "*"]))
+            Grid.columnDefinitions (System.String.Join(",",[for r in 0..7 -> "*"]))
+            Grid.children [
+                for id in 0..63 -> 
+                    let idStr = sprintf "(%s)" (idToPos id)
+                    let x,y = idToXY id
+
+                    let background, forground = match fromPos, state.game.[id] |> Option.map (fun r -> r.Color) with 
+                                                | Some pos, _ when pos = id -> "lightblue","black"
+                                                | Some pos, _ when isValidMoveById state.game pos id -> "yellow","black"
+                                                | _, Some White -> "lightgray","black"
+                                                | _, Some Black -> "black","white"
+                                                | _, None -> 
+                                                    if (id + (y % 2)) % 2 = 0 then
+                                                        "gray","white"
+                                                    else
+                                                        "lightyellow","black"
+                    
+                    let row = match state.Player with
+                                | White -> 7-y
+                                | Black -> y
+
+                    Button.create [
+                        Button.background background
+                        Button.foreground forground
+                        Button.content (state.game.[id] |> Option.fold (fun _ a -> a.Name + " " + idStr) idStr)
+                        Button.row row
+                        Button.column x
+                        match fromPos, state.game.[id] with 
+                        | Some r, _ -> Button.onClick (fun _ -> dispatch (To id)) 
+                        | None, Some a -> Button.onClick (fun _ -> dispatch (From id))
+                        | _,_ -> Button.onClick (fun _ -> ())
+                    ]
+            ]
+        ]
+
+    let toolPanel (dispatch) =
+        StackPanel.create [
+            Grid.row 0
+            Grid.column 0
+            StackPanel.margin 10.
+            StackPanel.spacing 10.
+            StackPanel.orientation Orientation.Horizontal
+            StackPanel.children [
+                button dispatch "Reset" Reset
+                button dispatch "No Pawn" RemovePawns
+                button dispatch "Flip" Flip
+                button dispatch "Copy Moves" CopyMoves
+                button dispatch "End Game" EndGame
+                button dispatch "Undo" Undo
+            ]
+        ]
+
+    let movesPanel (state: State) = 
+        ListBox.create [
+            Grid.row 1
+            Grid.column 1
+            ListBox.dataItems state.Moves
+            ListBox.itemTemplate (DataTemplateView<string>.create(fun item -> TextBlock.create[TextBlock.text item]))
+        ]
+
+    let view (state: State) (dispatch) =
         //let fromPiece = fromPos |> Option.map (fun r -> state.game.[r]) |> Option.flatten |> Option.map (fun r -> r.Color)
         Grid.create [
             Grid.rowDefinitions "Auto,*"
             Grid.columnDefinitions "*, 100"
             Grid.children [
-                StackPanel.create [
-                    Grid.row 0
-                    Grid.column 0
-                    StackPanel.margin 10.
-                    StackPanel.spacing 10.
-                    StackPanel.orientation Orientation.Horizontal
-                    StackPanel.children [
-                        button dispatch "Reset" Reset
-                        button dispatch "No Pawn" RemovePawns
-                        button dispatch "Flip" Flip
-                        button dispatch "Copy Moves" CopyMoves
-                        button dispatch "End Game" EndGame
-                        button dispatch "Undo" Undo
-                    ]
-                ]
-                Grid.create [
-                    Grid.row 1
-                    Grid.column 0
-                    Grid.rowDefinitions (System.String.Join(",",[for r in 0..7 -> "*"]))
-                    Grid.columnDefinitions (System.String.Join(",",[for r in 0..7 -> "*"]))
-                    Grid.children [
-                        for id in 0..63 -> 
-                            let idStr = sprintf "(%s)" (idToPos id)
-                            let x,y = idToXY id
-
-                            let background, forground = match fromPos, state.game.[id] |> Option.map (fun r -> r.Color) with 
-                                                        | Some pos, _ when pos = id -> "lightblue","black"
-                                                        | Some pos, _ when isValidMoveById state.game pos id -> "yellow","black"
-                                                        | _, Some White -> "lightgray","black"
-                                                        | _, Some Black -> "black","white"
-                                                        | _, None -> 
-                                                            if (id + (y % 2)) % 2 = 0 then
-                                                                "gray","white"
-                                                            else
-                                                                "lightyellow","black"
-                            
-                            let row = match state.Player with
-                                        | White -> 7-y
-                                        | Black -> y
-
-                            Button.create [
-                                Button.background background
-                                Button.foreground forground
-                                Button.content (state.game.[id] |> Option.fold (fun _ a -> a.Name + " " + idStr) idStr)
-                                Button.row row
-                                Button.column x
-                                match fromPos, state.game.[id] with 
-                                | Some r, _ -> Button.onClick (fun _ -> dispatch (To id)) 
-                                | None, Some a -> Button.onClick (fun _ -> dispatch (From id))
-                                | _,_ -> Button.onClick (fun _ -> ())
-                            ]
-                    ]
-                ]
-                ListBox.create [
-                    Grid.row 1
-                    Grid.column 1
-                    ListBox.dataItems state.Moves
-                    ListBox.itemTemplate (DataTemplateView<string>.create(fun item -> TextBlock.create[TextBlock.text item]))
-                ]
+                toolPanel dispatch
+                movesPanel state
+                match state.GameOver with
+                | Na -> chessBoard state dispatch
+                | _ -> gameOverView state
             ]
         ]      

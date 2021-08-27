@@ -106,7 +106,7 @@ module ChessActions =
             let attack1 = fromId + 9*i
             let attack2 = fromId + 7*i
 
-            let isFree id = game |> List.item id |> Option.isNone 
+            let isFree id = inRange id && game |> List.item id |> Option.isNone 
 
             if kingCheck |> not then
                 if isFree id then yield id;

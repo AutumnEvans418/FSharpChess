@@ -27,7 +27,8 @@ module TestModule =
                                     (valid && result, gameMove)
                                     ) (true, game) 
 
-        Assert.AreEqual(isValid, valid, action) 
+        Assert.AreEqual(isValid, valid, action)
+        game
 
     [<TestFixture>]
     type chessParserTests() = class
@@ -125,8 +126,12 @@ module TestModule =
         member _.``Lookup an initial game piece`` str result =
             lookup initialGame str |> Option.fold (fun _ v -> v.Name) "None" |> should equal result
 
-
-
+        [<TestCase(
+            "d2-d4,d4-d5,d5-d6,d6-c7,c7-d8,d7-d5,d5-d4,b1-c3,c3-d5,d5-e7,e7-g8,g8-f6,f6-h7,h7-f8,f8-d7,d7-b8,b8-a6,e1-b4,b4-b7,b7-a7,a7-a8,a8-c8,c8-d7,d7-d4,d4-g7,g7-f7,f7-h7,h7-h8,e8-e7,h8-h7,h7-g7,g7-f7,f7-g7,e7-d8,a6-c5,a2-a4,a1-a3,a3-b3,b3-b8,g7-f7,f7-g7",
+            "Winner(White)")>]
+        member _.``EndGame result`` move result =
+            let g = validateMoves initialGame move true "checked mate the black king"
+            gameOver g |> string |> should equal result 
 
         [<TestCase("a2-a3", "a3", "Pawn")>]
         [<TestCase("a2-a3", "a2", "None")>]
