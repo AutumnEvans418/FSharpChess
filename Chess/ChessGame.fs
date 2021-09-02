@@ -66,8 +66,12 @@ module ChessGrid =
         |> List.append [Some (rook White); Some (knight White); Some (bishop White); Some (king White); Some (queen White); Some (bishop White); Some (knight White); Some (rook White) ]
 
     let noPawnGame =
+        let pawns color = [None;None;None;Some (pawn color);Some (pawn color);None;None;None]
+
         [Some (rook Black); Some (knight Black); Some (bishop Black); Some (queen Black); Some (king Black); Some (bishop Black); Some (knight Black); Some (rook Black) ] 
-        |> List.append [for r in 0..47 -> None]
+        |> List.append (pawns Black)
+        |> List.append [for r in 0..31 -> None]
+        |> List.append (pawns White)
         |> List.append [Some (rook White); Some (knight White); Some (bishop White); Some (king White); Some (queen White); Some (bishop White); Some (knight White); Some (rook White) ]
     
     let endGame =

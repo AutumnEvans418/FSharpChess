@@ -69,7 +69,7 @@ module TestModule =
         [<TestCase("b1-a3", true, "white knight move left")>]
         [<TestCase("b1-c3", true, "white knight move right")>]
         member _.isValidMoves move isValid action =
-            validateMoves initialGame move isValid action   
+            validateMoves initialGame move isValid action |> ignore 
             
         [<TestCase("a1-a3", true, "move rook forward")>]
         [<TestCase("a1-a3,a3-b3", true, "move rook forward and then right")>]
@@ -77,16 +77,17 @@ module TestModule =
         [<TestCase("b1-a3,a1-a4", false, "move knight in front of rook and try to jump fail")>]
         [<TestCase("a1-b1", false, "move rook ontop of knight should fail")>]
         member _.``rook isvalidmoves`` move isValid action =
-            validateMoves noPawnGame move isValid action  
+            validateMoves noPawnGame move isValid action |> ignore
 
-        [<TestCase("c1-e3,e3-c5,c5-a3,a3-c1", true, "move bishop in diamond")>]
+        [<TestCase("d2-d3,c1-e3,e3-c5,c5-a3,a3-c1", true, "move bishop in diamond")>]
         [<TestCase("b1-d2,c1-e3", false, "move knight in way of bishop should fail")>]
-        [<TestCase("c1-h6,h6-c1", true, "move bishop diagnal and back")>]
-        [<TestCase("c1-g5,g5-d8", true, "move bishop diagnal and take the queen")>]
+        [<TestCase("d2-d3,c1-h6,h6-c1", true, "move bishop diagnal and back")>]
+        [<TestCase("d2-d3,e7-e6,c1-g5,g5-d8", true, "move bishop diagnal and take the queen")>]
         [<TestCase("c1-c4", false, "move bishop forward should fail")>]
         [<TestCase("c1-d2,d2-e1", false, "move bishop on Ally should fail")>]
         member _.``bishop isvalidmoves`` move isValid action =
-            validateMoves noPawnGame move isValid action  
+            validateMoves noPawnGame move isValid action |> ignore
+            
 
         [<TestCase("d2-d3,d1-d2", true, "move pawn and then king 1")>]
         [<TestCase("d2-d4,d1-d3", false, "move pawn and then king 2 should fail")>]
@@ -98,7 +99,7 @@ module TestModule =
         [<TestCase("d2-d4,c7-c5,d1-d2,d2-d3,d3-c3,c3-c4,c4-b4", false, "king can't move diag of enemy pawn")>]
         [<TestCase("d1-d2", false, "king can't move on ally pawn")>]
         member _.``king isvalidmoves`` move isValid action =
-            validateMoves initialGame move isValid action  
+            validateMoves initialGame move isValid action |> ignore 
 
         [<TestCase("e8-d7", false, "move king in front of queen fail")>]
         [<TestCase("e1-d2", false, "move king in front of queen fail")>]
@@ -106,14 +107,14 @@ module TestModule =
         [<TestCase("e8-d8", false, "move king on ally queen fail")>]
         [<TestCase("d8-d4,e1-f2", false, "move queen and king in danger should fail")>]
         member _.``king endgame isvalidmoves`` move isValid action =
-            validateMoves endGame move isValid action
+            validateMoves endGame move isValid action |> ignore
 
         [<TestCase("d2-d4,c7-c6,d1-d2,d8-a5,b2-b3", false, "Black queen checks white king. pawn doesn't block should be false")>]
         [<TestCase("d2-d4,g8-f6,d4-d5,f6-e4,d5-d6,e4-c3,e2-e3", false, "Black knight checks white king. pawn doesn't block should be false")>]
         [<TestCase("d2-d4,c7-c6,d1-d2,d8-a5,c2-c3", true, "Black queen checks white king. pawn blocks should be valid")>]
         [<TestCase("d2-d4,c7-c6,d1-d2,d8-a5,d2-d3", true, "Black queen checks white king. white king moves should be valid")>]
         member _.``king in check should limit valid moves`` move isValid action =
-            validateMoves initialGame move isValid action
+            validateMoves initialGame move isValid action |> ignore
 
         [<TestCase("a1", "Rook")>]
         [<TestCase("a8", "Rook")>]
