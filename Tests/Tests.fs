@@ -89,15 +89,15 @@ module TestModule =
             validateMoves noPawnGame move isValid action |> ignore
             
 
-        [<TestCase("d2-d3,d1-d2", true, "move pawn and then king 1")>]
-        [<TestCase("d2-d4,d1-d3", false, "move pawn and then king 2 should fail")>]
-        [<TestCase("b8-c6,c6-b4,d2-d4,d1-d2,d2-d3", false, "move enemy kight and king can't move in danger")>]
-        [<TestCase("d2-d4,d1-d2,b7-b6,c8-a6,d2-d3", false, "move enemy bishop and king can't move in danger")>]
-        [<TestCase("d2-d4,d1-d2,a7-a5,a8-a6,a6-b6,b6-b3,d2-d3", false, "move enemy rook and king can't move in danger")>]
-        [<TestCase("d2-d4,d1-d2,d2-d3,d3-c3,d7-d5,d8-d6,c3-b4", false, "move enemy queen. king can't move in danger")>]
-        [<TestCase("d2-d4,d1-d2,c7-c5,d8-b6,d2-c3,c3-c4", true, "king can move in front of enemy pawn")>]
-        [<TestCase("d2-d4,c7-c5,d1-d2,d2-d3,d3-c3,c3-c4,c4-b4", false, "king can't move diag of enemy pawn")>]
-        [<TestCase("d1-d2", false, "king can't move on ally pawn")>]
+        [<TestCase("e2-e3,e1-e2", true, "move pawn and then king 1")>]
+        [<TestCase("e2-e4,e1-e3", false, "move pawn and then king 2 should fail")>]
+        [<TestCase("g8-f6,f6-g4,e2-e4,e1-e2,e2-e3", false, "move enemy kight and king can't move in danger")>]
+        [<TestCase("e2-e3,b7-b6,c8-a6,e1-e2", false, "move enemy bishop and king can't move in danger")>]
+        [<TestCase("e2-e4,e1-e2,a7-a5,a8-a6,a6-b6,b6-b3,e2-e3", false, "move enemy rook and king can't move in danger")>]
+        [<TestCase("e2-e4,e1-e2,e2-e3,e7-e6,d8-f6,e3-f3", false, "move enemy queen. king can't move in danger")>]
+        [<TestCase("e2-e4,e1-e2,d7-d5,e2-e3,e3-d4", true, "king can move in front of enemy pawn")>]
+        [<TestCase("e2-e4,e1-e2,d7-d5,e2-e3,e3-d4,d4-c4", false, "king can't move diag of enemy pawn")>]
+        [<TestCase("e1-e2", false, "king can't move on ally pawn")>]
         member _.``king isvalidmoves`` move isValid action =
             validateMoves initialGame move isValid action |> ignore 
 
@@ -109,8 +109,8 @@ module TestModule =
         member _.``king endgame isvalidmoves`` move isValid action =
             validateMoves endGame move isValid action |> ignore
 
-        [<TestCase("d2-d4,c7-c6,d1-d2,d8-a5,b2-b3", false, "Black queen checks white king. pawn doesn't block should be false")>]
-        [<TestCase("d2-d4,g8-f6,d4-d5,f6-e4,d5-d6,e4-c3,e2-e3", false, "Black knight checks white king. pawn doesn't block should be false")>]
+        [<TestCase("d2-d4,d1-d3,f7-f6,d3-g6,e7-e6", false, "Black queen checks white king. pawn doesn't block should be false")>]
+        [<TestCase("g8-f6,d2-d3,f6-g4,d3-d4,g4-e3,d4-d5,e3-c2,d5-d6", false, "Black knight checks white king. pawn doesn't block should be false")>]
         [<TestCase("d2-d4,c7-c6,d1-d2,d8-a5,c2-c3", true, "Black queen checks white king. pawn blocks should be valid")>]
         [<TestCase("d2-d4,c7-c6,d1-d2,d8-a5,d2-d3", true, "Black queen checks white king. white king moves should be valid")>]
         member _.``king in check should limit valid moves`` move isValid action =
@@ -121,15 +121,14 @@ module TestModule =
         [<TestCase("h1", "Rook")>]
         [<TestCase("h8", "Rook")>]
         [<TestCase("d8", "Queen")>]
-        [<TestCase("e1", "Queen")>]
+        [<TestCase("d1", "Queen")>]
         [<TestCase("a2", "Pawn")>]
         [<TestCase("a3", "None")>]
         member _.``Lookup an initial game piece`` str result =
             lookup initialGame str |> Option.fold (fun _ v -> v.Name) "None" |> should equal result
 
-        [<TestCase(
-            "d2-d4,d4-d5,d5-d6,d6-c7,c7-d8,d7-d5,d5-d4,b1-c3,c3-d5,d5-e7,e7-g8,g8-f6,f6-h7,h7-f8,f8-d7,d7-b8,b8-a6,e1-b4,b4-b7,b7-a7,a7-a8,a8-c8,c8-d7,d7-d4,d4-g7,g7-f7,f7-h7,h7-h8,e8-e7,h8-h7,h7-g7,g7-f7,f7-g7,e7-d8,a6-c5,a2-a4,a1-a3,a3-b3,b3-b8,g7-f7,f7-g7",
-            "Winner(White)")>]
+        [<TestCase("f2-f3,e7-e5,g2-g4,d8-h4","Winner(Black)")>]
+        [<TestCase("f2-f3,e7-e5,g2-g4,d8-h4","Na")>]
         member _.``EndGame result`` move result =
             let g = validateMoves initialGame move true "checked mate the black king"
             gameOver g |> string |> should equal result 

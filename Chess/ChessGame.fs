@@ -62,11 +62,12 @@ module ChessGrid =
 
         let backRow c = 
             [rook c;knight c;bishop c;queen c;king c;bishop c;knight c;rook c] 
-        [Some (rook Black); Some (knight Black); Some (bishop Black); Some (queen Black); Some (king Black); Some (bishop Black); Some (knight Black); Some (rook Black) ] 
+            |> List.map (fun r -> Some r)
+        backRow Black
         |> List.append (pawns Black)
         |> List.append [for r in 0..31 -> None]
         |> List.append (pawns White)
-        |> List.append [Some (rook White); Some (knight White); Some (bishop White); Some (king White); Some (queen White); Some (bishop White); Some (knight White); Some (rook White) ]
+        |> List.append (backRow White)
 
     let noPawnGame =
         let pawns color = [None;None;None;Some (pawn color);Some (pawn color);None;None;None]
@@ -76,7 +77,13 @@ module ChessGrid =
         |> List.append [for r in 0..31 -> None]
         |> List.append (pawns White)
         |> List.append [Some (rook White); Some (knight White); Some (bishop White); Some (king White); Some (queen White); Some (bishop White); Some (knight White); Some (rook White) ]
-    
+    //based on https://www.chess.com/terms/draw-chess
+    let endGame2 = 
+        [Some(king Black)]
+        |> List.append [for r in 0..8 -> None]
+        |> List.append [Some(queen White)]
+        |> List.
+
     let endGame =
         [None; None; None; Some (queen Black); Some (king Black); None; None; None] 
         |> List.append [for r in 0..47 -> None]
