@@ -59,6 +59,9 @@ module ChessGrid =
 
     let initialGame =
         let pawns color = [for r in 0..7 -> Some (pawn color)]
+
+        let backRow c = 
+            [rook c;knight c;bishop c;queen c;king c;bishop c;knight c;rook c] 
         [Some (rook Black); Some (knight Black); Some (bishop Black); Some (queen Black); Some (king Black); Some (bishop Black); Some (knight Black); Some (rook Black) ] 
         |> List.append (pawns Black)
         |> List.append [for r in 0..31 -> None]
