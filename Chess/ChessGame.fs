@@ -241,11 +241,12 @@ module ChessActions =
             
 
     let getKingMoves game fromId =
-        let adds = [1;-1;8;-8;9;-9;7;-7]
+        let adds = [(1,0);(-1,0);(8,1);(-8,1);(9,1);(-9,1);(7,1);(-7,1)]
         let check = isPieceInCheck game fromId
-        seq [for next in adds do 
+        seq [for (next,rowDif) in adds do 
                 let id = fromId + next
-                if check id |> not && isEnemyColor game fromId id then 
+                let row = getRow fromId - getRow id |> Math.Abs
+                if row = rowDif && inRange id && check id |> not && isEnemyColor game fromId id then 
                     yield id
             ]
 

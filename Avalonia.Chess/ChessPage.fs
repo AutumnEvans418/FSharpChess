@@ -20,8 +20,9 @@ module ChessPage =
         Moves: string list
         Player: Color
         GameOver: EndGame
+        Turn: Color
         }
-    let init = { game = initialGame; fromPos = None; Moves=[]; Player = White; GameOver = Na }
+    let init = { game = initialGame; fromPos = None; Moves=[]; Player = White; GameOver = Na; Turn=White }
 
     type Msg = 
         | From of int 
@@ -33,6 +34,9 @@ module ChessPage =
         | EndGame
         | Undo
 
+    let swap color = 
+        match color with | White -> Black | Black -> White
+
     let update (msg: Msg) (state: State) : State =
         match msg with
         | From v -> { state with fromPos = Some v }
@@ -42,12 +46,12 @@ module ChessPage =
                 let moveAction = moveById state.game fromId v
                 let fromStr = idToPos fromId
                 let toStr = idToPos v
-                { state with fromPos = None; game = moveAction; Moves = [sprintf "%s-%s" fromStr toStr] |> List.append state.Moves; GameOver = gameOver moveAction }
+                { state with fromPos = None; game = moveAction; Moves = [sprintf "%s-%s" fromStr toStr] |> List.append state.Moves; GameOver = gameOver moveAction; Turn = swap state.Turn }
             else 
                 { state with fromPos = None }
         | Reset -> init
         | RemovePawns -> { init with game = noPawnGame }
-        | Flip -> { state with Player = match state.Player with | White -> Black | Black -> White }
+        | Flip -> { state with Player = swap state.Player  }
         | CopyMoves -> 
             Application.Current.Clipboard.SetTextAsync (state.Moves |> String.concat ",") |> ignore
             state
@@ -88,7 +92,7 @@ module ChessPage =
 
     let chessBoard (state: State) (dispatch) =
         let fromPos = state.fromPos
-
+        let color id = state.game.[id] |> Option.map (fun r -> r.Color)
         Grid.create [
             Grid.row 1
             Grid.column 0
@@ -96,10 +100,10 @@ module ChessPage =
             Grid.columnDefinitions (System.String.Join(",",[for r in 0..7 -> "*"]))
             Grid.children [
                 for id in 0..63 -> 
-                    let idStr = sprintf "(%s)" (idToPos id)
+                    let idStr = sprintf "(%s %i)" (idToPos id) id
                     let x,y = idToXY id
 
-                    let background, forground = match fromPos, state.game.[id] |> Option.map (fun r -> r.Color) with 
+                    let background, forground = match fromPos, color id with 
                                                 | Some pos, _ when pos = id -> "lightblue","black"
                                                 | Some pos, _ when isValidMoveById state.game pos id -> "yellow","black"
                                                 | _, Some White -> "lightgray","black"
@@ -121,14 +125,14 @@ module ChessPage =
                         Button.row row
                         Button.column x
                         match fromPos, state.game.[id] with 
-                        | Some r, _ -> Button.onClick (fun _ -> dispatch (To id)) 
-                        | None, Some a -> Button.onClick (fun _ -> dispatch (From id))
+                        | Some _, _ -> Button.onClick (fun _ -> dispatch (To id)) 
+                        | None, Some item when item.Color = state.Turn -> Button.onClick (fun _ -> dispatch (From id))
                         | _,_ -> Button.onClick (fun _ -> ())
                     ]
             ]
         ]
 
-    let toolPanel (dispatch) =
+    let toolPanel (state: State) (dispatch) =
         StackPanel.create [
             Grid.row 0
             Grid.column 0
@@ -142,6 +146,9 @@ module ChessPage =
                 button dispatch "Copy Moves" CopyMoves
                 button dispatch "End Game" EndGame
                 button dispatch "Undo" Undo
+                TextBlock.create [
+                    TextBlock.text (sprintf "Player's %O Turn" state.Turn)
+                ]
             ]
         ]
 
@@ -159,7 +166,7 @@ module ChessPage =
             Grid.rowDefinitions "Auto,*"
             Grid.columnDefinitions "*, 100"
             Grid.children [
-                toolPanel dispatch
+                toolPanel state dispatch
                 movesPanel state
                 match state.GameOver with
                 | Na -> chessBoard state dispatch

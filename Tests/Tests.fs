@@ -131,8 +131,8 @@ module TestModule =
         member _.``Lookup an initial game piece`` str result =
             lookup initialGame str |> Option.fold (fun _ v -> v.Name) "None" |> should equal result
 
-        [<TestCase("f2-f3,e7-e5,g2-g4,d8-h4","Winner(Black)")>]
-        [<TestCase("f2-f3,e7-e5,g2-g4,d8-h4","Na")>]
+        [<TestCase("f2-f3,e7-e5,g2-g4,d8-h4","Winner Black")>]
+        [<TestCase("f2-f3,e7-e5,g2-g4","Na")>]
         member _.``EndGame result`` move result =
             let g = validateMoves initialGame move true "checked mate the black king"
             gameOver g |> string |> should equal result 
@@ -142,6 +142,10 @@ module TestModule =
             gameOver endGame2 |> should equal Tie
 
         [<Test>]
+        member _.``endgame king should have no moves``() =
+            getMoves2 endGame2 63 |> Seq.length |> should equal 0
+
+        [<Test>]
         member _.``endgame black should have no moves``() =
             let list = getMovesByColor endGame2 Black 
             list |> List.length |> should equal 1
@@ -149,6 +153,7 @@ module TestModule =
             id |> should equal 63
             moves |> Seq.length |> should equal 0
 
+       
         
         [<Test>]
         member _.``endGame should be 64 grid``() =
