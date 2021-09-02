@@ -82,7 +82,8 @@ module ChessGrid =
         [Some(king Black)]
         |> List.append [for r in 0..8 -> None]
         |> List.append [Some(queen White)]
-        |> List.
+        |> List.append [Some(king White)]
+        |> List.append [for r in 0..51 -> None]
 
     let endGame =
         [None; None; None; Some (queen Black); Some (king Black); None; None; None] 

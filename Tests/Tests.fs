@@ -116,6 +116,10 @@ module TestModule =
         member _.``king in check should limit valid moves`` move isValid action =
             validateMoves initialGame move isValid action |> ignore
 
+        [<TestCase("h8-a8", false, "black king should not be able to move")>]
+        member _.``endGame king should have no moves`` move isValid action =
+            validateMoves endGame2 move isValid action |> ignore
+
         [<TestCase("a1", "Rook")>]
         [<TestCase("a8", "Rook")>]
         [<TestCase("h1", "Rook")>]
@@ -132,6 +136,23 @@ module TestModule =
         member _.``EndGame result`` move result =
             let g = validateMoves initialGame move true "checked mate the black king"
             gameOver g |> string |> should equal result 
+
+        [<Test>]
+        member _.``endgame should be a draw``() =
+            gameOver endGame2 |> should equal Tie
+
+        [<Test>]
+        member _.``endgame black should have no moves``() =
+            let list = getMovesByColor endGame2 Black 
+            list |> List.length |> should equal 1
+            let id, moves = list |> List.item 0 
+            id |> should equal 63
+            moves |> Seq.length |> should equal 0
+
+        
+        [<Test>]
+        member _.``endGame should be 64 grid``() =
+            endGame2 |> List.length |> should equal 64
 
         [<TestCase("a2-a3", "a3", "Pawn")>]
         [<TestCase("a2-a3", "a2", "None")>]
