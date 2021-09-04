@@ -11,7 +11,7 @@ module ChessPage =
     open Chess.ChessParser
     open Chess.ChessActions
     open Chess.ChessGrid
-
+    open Chess.ChessAi
     
 
     type State = { 
@@ -33,9 +33,6 @@ module ChessPage =
         | CopyMoves
         | EndGame
         | Undo
-
-    let swap color = 
-        match color with | White -> Black | Black -> White
 
     let update (msg: Msg) (state: State) : State =
         match msg with

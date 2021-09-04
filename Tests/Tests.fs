@@ -11,7 +11,7 @@ open Chess
 open Chess
 open ChessGrid
 open ChessActions
-
+open Chess.ChessAi
 module TestModule =
     
 
@@ -172,6 +172,20 @@ module TestModule =
         [<Test>]
         member _.``game board is 64 squares``() =
             initialGame |> should haveLength 64
+        
+        [<Test>]
+        member _.``Ai should move``() =
+            let move, score = minimax initialGame 1 true White
+            move |> should equal (0,0)
+
+        [<Test>]
+        member _.``All moves should be in range``() =
+            let moves = getMovesByColor initialGame White
+            for (piece,pMoves) in moves do
+                for move in pMoves do
+                    let p = initialGame.[piece]
+                    printfn "%O-%i" p move
+                    inRange move |> should equal true
     end
 
     
