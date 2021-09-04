@@ -48,7 +48,7 @@ module ChessPage =
                 let enemy = swap state.Turn
                 let nState = { state with fromPos = None; game = moveAction; Moves = [sprintf "%s-%s" fromStr toStr] |> List.append state.Moves; GameOver = gameOver moveAction; Turn = enemy }
 
-                let eMove, _ = minimax nState.game 3 true enemy
+                let eMove, _ = minimax nState.game 2 true enemy
                 match eMove with
                 | Some (eFromId, eToId) -> 
                     let eMoveAction = moveById nState.game eFromId eToId

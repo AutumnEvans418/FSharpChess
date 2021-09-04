@@ -174,8 +174,9 @@ module TestModule =
             initialGame |> should haveLength 64
         
         [<Test>]
+        [<Repeat(5)>]
         member _.``Ai should move``() =
-            let move, score = minimax initialGame 2 true White
+            let move, _ = minimax initialGame 0 10 3 true White
             move |> should equal (12,20)
 
         [<Test>]

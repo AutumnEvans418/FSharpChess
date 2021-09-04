@@ -353,20 +353,48 @@ module ChessAi =
     let getBoardValue game player =
         getPlayerBoardValue game player - getPlayerBoardValue game (swap player)
 
-    let rec minimax game depth maximizingPlayer player: (int * int) option * int =
+    let rec minimax game alpha beta depth maximizingPlayer player: (int * int) option * int =
         
-        let min list = list |> List.append [None,Int32.MaxValue] |> List.minBy (fun (_, value) -> value)
-        let max list = list |> List.append [None,Int32.MinValue] |> List.maxBy (fun (_, value) -> value)
+        //let min list = list |> Seq.append [None,Int32.MaxValue] |> Seq.minBy (fun (_, value) -> value)
+        //let max list = list |> Seq.append [None,Int32.MinValue] |> Seq.maxBy (fun (_, value) -> value)
         
-        let moveCalc fromId toId =
-            let nGame = moveById game fromId toId
-            let _, value = minimax nGame (depth-1) (maximizingPlayer |> not) (swap player)
-            Some (fromId, toId), value
+        let rec max list =
+            
+            let a,value = list |> Seq.tryHead
+            if value >= beta then a,value
+            else 
+            if value > alpha then a,value
+            else max (list |> Seq.tail)
 
+
+        let rec min list =
+            if list |> Seq.isEmpty then None, 0
+            else
+            let a,value = list |> Seq.head
+            if value <= alpha then a,value
+            else if value < beta then a,value
+            else min (list |> Seq.tail)
+
+        let moveCalc (fromId, toId) =
+            let nGame = moveById game fromId toId
+            let _, value = minimax nGame alpha beta (depth-1) (maximizingPlayer |> not) (swap player)
+            Some (fromId, toId), value
+        
         let nodes = getNode game player
+
+        //let calculate action (i, moves) =
+        //    [for move in moves -> moveCalc i move ] |> action
+
+        let getResult action =
+            nodes.ToList()
+                .AsParallel()
+                .SelectMany(fun (fromId, items) -> items.Select(fun toId -> (fromId, toId)))
+                .Select(moveCalc)
+                |> action
+
         if depth = 0 || nodes |> List.isEmpty then None, getBoardValue game player
         else if maximizingPlayer then
-            nodes |> List.map (fun (i, moves) -> [for move in moves -> moveCalc i move ] |> max) |> max
+            getResult max
         else
-            nodes |> List.map (fun (i, moves) -> [for move in moves -> moveCalc i move ] |> min) |> min
+            getResult min
         
