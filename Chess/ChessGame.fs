@@ -125,23 +125,26 @@ module ChessActions =
 
             if kingCheck |> not then
                 if isFree id then yield id;
-                if piece.HasMoved |> not && emptySpace game id && emptySpace game id16 then yield id16;
+                if inRange id16 && piece.HasMoved |> not && emptySpace game id && emptySpace game id16 then yield id16;
             
-            if isFree attack1 |> not || kingCheck  then yield attack1
-            if isFree attack2 |> not || kingCheck then yield attack2
+            if inRange attack1 && (isFree attack1 |> not || kingCheck) then yield attack1
+            if inRange attack2 && (isFree attack2 |> not || kingCheck) then yield attack2
         }
            
     let getKnightMoves fromId =
+        let moves = [
+            fromId+15,2
+            fromId+17,2
+            fromId-15,-2
+            fromId-17,-2
+            fromId+10,1
+            fromId-10,-1
+            fromId+6,1
+            fromId-6,-1]
+
         let row = getRow fromId
-        seq {
-            if getRow (fromId+15) = row + 2 then yield fromId + 15;
-            if getRow (fromId+17) = row + 2 then yield fromId + 17;
-            if getRow (fromId-15) = row - 2 then yield fromId - 15;
-            if getRow (fromId-17) = row - 2 then yield fromId - 17;
-            if getRow (fromId+10) = row + 1 then yield fromId + 10;
-            if getRow (fromId-10) = row - 1 then yield fromId - 10;
-            if getRow (fromId+6) = row + 1 then yield fromId + 6;
-            if getRow (fromId-6) = row - 1 then yield fromId - 6;}
+
+        moves |> List.filter (fun (toId, rowDiff) -> getRow toId = row + rowDiff && inRange toId) |> List.map (fun (toId, _) -> toId) |> List.toSeq
 
 
     let getColor game fromId =

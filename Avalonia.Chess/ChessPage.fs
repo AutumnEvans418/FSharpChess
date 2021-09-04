@@ -21,8 +21,9 @@ module ChessPage =
         Player: Color
         GameOver: EndGame
         Turn: Color
+        Ai: Color
         }
-    let init = { game = initialGame; fromPos = None; Moves=[]; Player = White; GameOver = Na; Turn=White }
+    let init = { game = initialGame; fromPos = None; Moves=[]; Player = White; GameOver = Na; Turn=White; Ai=Black }
 
     type Msg = 
         | From of int 
@@ -43,7 +44,16 @@ module ChessPage =
                 let moveAction = moveById state.game fromId v
                 let fromStr = idToPos fromId
                 let toStr = idToPos v
-                { state with fromPos = None; game = moveAction; Moves = [sprintf "%s-%s" fromStr toStr] |> List.append state.Moves; GameOver = gameOver moveAction; Turn = swap state.Turn }
+
+                let enemy = swap state.Turn
+                let nState = { state with fromPos = None; game = moveAction; Moves = [sprintf "%s-%s" fromStr toStr] |> List.append state.Moves; GameOver = gameOver moveAction; Turn = enemy }
+
+                let eMove, _ = minimax nState.game 3 true enemy
+                match eMove with
+                | Some (eFromId, eToId) -> 
+                    let eMoveAction = moveById nState.game eFromId eToId
+                    { nState with game = eMoveAction; GameOver = gameOver eMoveAction; Turn = state.Turn }
+                | None -> nState
             else 
                 { state with fromPos = None }
         | Reset -> init

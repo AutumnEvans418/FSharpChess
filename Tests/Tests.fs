@@ -175,8 +175,8 @@ module TestModule =
         
         [<Test>]
         member _.``Ai should move``() =
-            let move, score = minimax initialGame 1 true White
-            move |> should equal (0,0)
+            let move, score = minimax initialGame 2 true White
+            move |> should equal (12,20)
 
         [<Test>]
         member _.``All moves should be in range``() =
