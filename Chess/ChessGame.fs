@@ -26,7 +26,7 @@ module ChessParser =
         (from, tTo)
 
     let parseMoves (str:string) = 
-        let moves = [for r in str.Split(',') -> r] 
+        let moves = [for r in str.Split(',') do if String.IsNullOrWhiteSpace r |> not then yield r] 
         moves |> List.map parseMove
 
     let getXY (position: string) =

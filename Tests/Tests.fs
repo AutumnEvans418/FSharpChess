@@ -189,7 +189,7 @@ module TestModule =
         member _.``initial board score should be 0``() =
             getBoardValue initialGame White |> should equal 0
 
-        [<TestCase("")>]
+        [<TestCase("", 0, "no moves")>]
         member _.``board state value should be`` moves value action =
             let game = validateMoves initialGame moves true action
             getBoardValue game White |> should equal value
