@@ -11,7 +11,7 @@
     <Compile Include="ChessGrid.fs" />
     <Compile Include="ChessActions.fs" />
     <None Include="README.md" />
-    <Compile Include="ChessGame.fs" />
+    <Compile Include="ChessAi.fs" />
   </ItemGroup>
 
   <ItemGroup>

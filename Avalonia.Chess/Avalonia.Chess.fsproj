@@ -6,6 +6,42 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Content Include="Images\Bishop-b.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Images\Bishop-w.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Images\King-b.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Images\King-w.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Images\Knight-b.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Images\Knight-w.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Images\Pawn-b.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Images\Pawn-w.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Images\Queen-b.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Images\Queen-w.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Images\Rook-b.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Images\Rook-w.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
         <Compile Include="ChessPage.fs" />
         <Compile Include="Shell.fs" />
         <Compile Include="Program.fs" />
@@ -23,11 +59,9 @@
         <EmbeddedResource Remove=".template.config\**" />
     </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\Chess\Chess.fsproj" />
-    </ItemGroup>
+    <ItemGroup />
 
     <ItemGroup>
-      <Folder Include="Images\" />
+      <ProjectReference Include="..\Chess\Chess.fsproj" />
     </ItemGroup>
 </Project>

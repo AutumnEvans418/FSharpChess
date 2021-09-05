@@ -22,12 +22,15 @@ module ChessActions =
             let attack1 = fromId + 9*i
             let attack2 = fromId + 7*i
 
-            let isNextRow id row = getRow fromId = getRow id + (row*i)
+            let isNextRow id row = 
+                let ro1 = getRow fromId 
+                let ro2 = getRow id
+                ro1 = ro2 + row * -i
 
-            let isFree id = inRange id && game |> List.item id |> Option.isNone 
+            let isFree id = game |> List.item id |> Option.isNone 
 
             if kingCheck |> not then
-                if isNextRow id 1 && isFree id then yield id;
+                if isNextRow id 1 && inRange id && isFree id then yield id;
                 if isNextRow id16 2 && inRange id16 && piece.HasMoved |> not && emptySpace game id && emptySpace game id16 then yield id16;
             
             if isNextRow attack1 1 && inRange attack1 && (isFree attack1 |> not || kingCheck) then yield attack1

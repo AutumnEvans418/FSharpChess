@@ -3,6 +3,7 @@ namespace Avalonia.Chess
 open Chess.Pieces
 open Avalonia.FuncUI.Components
 open Avalonia
+open Avalonia.Media.Imaging
 
 module ChessPage =
     open Avalonia.Controls
@@ -12,7 +13,7 @@ module ChessPage =
     open Chess.ChessActions
     open Chess.ChessGrid
     open Chess.ChessAi
-    
+    open Chess.ChessIcons
 
     type State = { 
         game : Piece option list
@@ -97,6 +98,11 @@ module ChessPage =
                 ]
             ]
         ]
+    
+    let darkColor = "#a6a693"
+    let lightColor = "#769656"
+    let selectColor = "lightblue"
+    let highlightColor = "#baca44"
 
     let chessBoard (state: State) (dispatch) =
         let fromPos = state.fromPos
@@ -112,16 +118,16 @@ module ChessPage =
                     let idStr = sprintf "(%s %i)" (getAlpha chessId) id
                     let x,y = getXY chessId
 
-                    let background, forground = match fromPos, color id with 
-                                                | Some pos, _ when pos = chessId -> "lightblue","black"
-                                                | Some pos, _ when isValidMoveById state.game pos chessId -> "yellow","black"
-                                                | _, Some White -> "lightgray","black"
-                                                | _, Some Black -> "black","white"
-                                                | _, None -> 
+                    
+
+                    let background = match fromPos with 
+                                                | Some pos when pos = chessId -> selectColor
+                                                | Some pos when isValidMoveById state.game pos chessId -> highlightColor
+                                                | _ -> 
                                                     if (id + (y % 2)) % 2 = 0 then
-                                                        "gray","white"
+                                                        lightColor
                                                     else
-                                                        "lightyellow","black"
+                                                        darkColor
                     
                     let row = match state.Player with
                                 | White -> 7-y
@@ -129,10 +135,15 @@ module ChessPage =
 
                     Button.create [
                         Button.background background
-                        Button.foreground forground
-                        Button.content (state.game.[id] |> Option.fold (fun _ a -> a.Name + " " + idStr) idStr)
+                        Button.foreground "White"
+                        ToolTip.tip (state.game.[id] |> Option.fold (fun _ a -> a.Name + " " + idStr) idStr)
+                        
+                        match state.game.[id] with
+                        | Some p -> Button.content (Image.create [Image.source (new Bitmap(getIcon p))])
+                        | None -> ()
                         Button.row row
                         Button.column x
+                        
                         match fromPos, state.game.[id] with 
                         | Some _, _ -> Button.onClick (fun _ -> dispatch (To chessId)) 
                         | None, Some item when item.Color = state.Turn -> Button.onClick (fun _ -> dispatch (From chessId))

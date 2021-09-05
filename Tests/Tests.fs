@@ -150,8 +150,6 @@ module TestModule =
             let id, moves = list |> List.item 0 
             id |> should equal 63
             moves |> Seq.length |> should equal 0
-
-       
         
         [<Test>]
         member _.``endGame should be 64 grid``() =
