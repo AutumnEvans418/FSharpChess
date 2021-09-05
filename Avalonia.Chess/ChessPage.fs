@@ -35,6 +35,11 @@ module ChessPage =
         | EndGame
         | Undo
 
+    let addMoves moves fromId toId =
+        let fromStr = idToPos fromId
+        let toStr = idToPos toId
+        [sprintf "%s-%s" fromStr toStr] |> List.append moves
+
     let update (msg: Msg) (state: State) : State =
         match msg with
         | From v -> { state with fromPos = Some v }
@@ -42,17 +47,15 @@ module ChessPage =
             let fromId = state.fromPos |> Option.get
             if isValidMoveById state.game fromId v then
                 let moveAction = moveById state.game fromId v
-                let fromStr = idToPos fromId
-                let toStr = idToPos v
 
                 let enemy = swap state.Turn
-                let nState = { state with fromPos = None; game = moveAction; Moves = [sprintf "%s-%s" fromStr toStr] |> List.append state.Moves; GameOver = gameOver moveAction; Turn = enemy }
+                let nState = { state with fromPos = None; game = moveAction; Moves = addMoves state.Moves fromId v; GameOver = gameOver moveAction; Turn = enemy }
 
-                let eMove, _ = minimax nState.game 2 true enemy
+                let eMove, _ = minimax2 nState.game true enemy
                 match eMove with
                 | Some (eFromId, eToId) -> 
                     let eMoveAction = moveById nState.game eFromId eToId
-                    { nState with game = eMoveAction; GameOver = gameOver eMoveAction; Turn = state.Turn }
+                    { nState with game = eMoveAction; GameOver = gameOver eMoveAction; Turn = state.Turn; Moves = addMoves nState.Moves eFromId eToId }
                 | None -> nState
             else 
                 { state with fromPos = None }

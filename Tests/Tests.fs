@@ -177,7 +177,32 @@ module TestModule =
         [<Repeat(5)>]
         member _.``Ai should move``() =
             let move, _ = minimax initialGame 0 10 3 true White
-            move |> should equal (12,20)
+            move |> Option.isSome |> Assert.That
+
+        [<TestCase("d2-d4,e7-e6,e2-e4,b7-b6,g1-f3,g8-f6,b1-c3")>]
+        member _.``Ai should always move`` moves =
+            let game = validateMoves initialGame moves true "moves pawns into squre of death and ai should be able to respond"
+            let move,_ = minimax2 game true Black
+            move |> Option.isSome |> Assert.That
+
+        [<Test>]
+        member _.``initial board score should be 0``() =
+            getBoardValue initialGame White |> should equal 0
+
+        [<TestCase("")>]
+        member _.``board state value should be`` moves value action =
+            let game = validateMoves initialGame moves true action
+            getBoardValue game White |> should equal value
+
+        [<TestCase("a2-h2", false, "move pawn onto ally pawn on other side of board should fail")>]
+        member _.``Pawn valid moves`` moves isValid action =
+            validateMoves initialGame moves isValid action |> ignore
+
+        [<TestCase("a2", 2)>]
+        member _.``piece should have x number of moves`` piece moves =
+            let id = getXY piece |> xYToId
+            getMoves2 initialGame id |> Seq.length |> should equal moves
+
 
         [<Test>]
         member _.``All moves should be in range``() =

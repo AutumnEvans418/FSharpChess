@@ -341,8 +341,8 @@ module ChessAi =
 
     let getPlayerBoardValue game player =
         let nodes = getNode game player
-        let pieces = nodes |> List.map (fun (p, moves) -> p) |> List.sum
-        let moves = nodes |> List.map (fun (p, moves) -> moves |> Seq.sum) |> List.sum
+        let pieces = nodes |> List.map (fun (p, moves) -> p) |> List.length
+        let moves = nodes |> List.map (fun (p, moves) -> moves |> Seq.length) |> List.sum
 
         let moveCalc id =
             getMoveValue game id
@@ -351,29 +351,41 @@ module ChessAi =
         [pieces;moves;moveValues] |> List.sum
 
     let getBoardValue game player =
-        getPlayerBoardValue game player - getPlayerBoardValue game (swap player)
+        let current = getPlayerBoardValue game player
+        let enemy = getPlayerBoardValue game (swap player)
+        current - enemy
 
+    // https://www.chessprogramming.org/Simplified_Evaluation_Function
+    // https://stackoverflow.com/questions/64417780/increase-the-average-depth-for-the-minimax-algorithm-in-chess
     let rec minimax game alpha beta depth maximizingPlayer player: (int * int) option * int =
         
         //let min list = list |> Seq.append [None,Int32.MaxValue] |> Seq.minBy (fun (_, value) -> value)
         //let max list = list |> Seq.append [None,Int32.MinValue] |> Seq.maxBy (fun (_, value) -> value)
         
-        let rec max list =
-            
-            let a,value = list |> Seq.tryHead
-            if value >= beta then a,value
-            else 
-            if value > alpha then a,value
-            else max (list |> Seq.tail)
+        let rec max (bestId,bestValue) list =
+            match list |> Seq.tryHead with
+            | Some (a,value) -> 
+                if value >= beta then a,value
+                else if value > alpha then a,value
+                else
+                    if value > bestValue then
+                        max (a, value) (list |> Seq.tail)
+                    else
+                        max (bestId, bestValue) (list |> Seq.tail)
+            | None -> (bestId, bestValue)  
 
+        let rec min (bestId,bestValue) list =
+            match list |> Seq.tryHead with
+            | Some (a,value) -> 
+                if value <= alpha then a,value
+                else if value < beta then a,value
+                else 
+                    if value < bestValue then
+                        min (a, value) (list |> Seq.tail)
+                    else
+                        min (bestId, bestValue) (list |> Seq.tail)
+            | None -> None,0
 
-        let rec min list =
-            if list |> Seq.isEmpty then None, 0
-            else
-            let a,value = list |> Seq.head
-            if value <= alpha then a,value
-            else if value < beta then a,value
-            else min (list |> Seq.tail)
 
         let moveCalc (fromId, toId) =
             let nGame = moveById game fromId toId
@@ -387,14 +399,16 @@ module ChessAi =
 
         let getResult action =
             nodes.ToList()
-                .AsParallel()
                 .SelectMany(fun (fromId, items) -> items.Select(fun toId -> (fromId, toId)))
                 .Select(moveCalc)
                 |> action
 
         if depth = 0 || nodes |> List.isEmpty then None, getBoardValue game player
         else if maximizingPlayer then
-            getResult max
+            getResult (max (None, Int32.MinValue))
         else
-            getResult min
+            getResult (min (None, Int32.MaxValue))
+
+    let minimax2 game maxPlayer player = 
+        minimax game 0 10 2 maxPlayer player
         
