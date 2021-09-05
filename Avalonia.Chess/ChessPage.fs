@@ -23,8 +23,17 @@ module ChessPage =
         GameOver: EndGame
         Turn: Color
         Ai: Color
+        HighlightedPiece: ChessBoardId option
         }
-    let init = { game = initialGame; fromPos = None; Moves=[]; Player = White; GameOver = Na; Turn=White; Ai=Black }
+    let init = { 
+        game = initialGame
+        fromPos = None
+        Moves=[]
+        Player = White
+        GameOver = Na
+        Turn=White
+        Ai=Black 
+        HighlightedPiece=None }
 
     type Msg = 
         | From of ChessBoardId 
@@ -35,6 +44,7 @@ module ChessPage =
         | CopyMoves
         | EndGame
         | Undo
+        | Highlighted of ChessBoardId option
 
     let getMoveAlpha (f,t) =
         sprintf "%s-%s" (getAlpha f) (getAlpha t)
@@ -75,6 +85,8 @@ module ChessPage =
                 let moves = state.Moves |> List.filter (fun r -> r <> (fromId,toId))
                 let action = moveById state.game fromId toId 
                 {state with Moves = moves; game = action}
+        | Highlighted v -> {state with HighlightedPiece = v} 
+            
     
     let button dispatch name action =
         Button.create [
@@ -107,7 +119,9 @@ module ChessPage =
     let chessBoard (state: State) (dispatch) =
         let fromPos = state.fromPos
         let color id = state.game.[id] |> Option.map (fun r -> r.Color)
+        
         Grid.create [
+            Grid.isSharedSizeScope true
             Grid.row 1
             Grid.column 0
             Grid.rowDefinitions (System.String.Join(",",[for r in 0..7 -> "*"]))
@@ -120,9 +134,11 @@ module ChessPage =
 
                     
 
-                    let background = match fromPos with 
-                                                | Some pos when pos = chessId -> selectColor
-                                                | Some pos when isValidMoveById state.game pos chessId -> highlightColor
+                    let background = match fromPos, state.HighlightedPiece with 
+                                                | Some pos, _ when pos = chessId -> selectColor
+                                                | Some pos, _ when isValidMoveById state.game pos chessId -> highlightColor
+                                                | _, Some pos when pos = chessId -> selectColor
+                                                | _, Some pos when isValidMoveById state.game pos chessId -> highlightColor
                                                 | _ -> 
                                                     if (id + (y % 2)) % 2 = 0 then
                                                         lightColor
@@ -143,7 +159,8 @@ module ChessPage =
                         | None -> ()
                         Button.row row
                         Button.column x
-                        
+                        Button.onPointerEnter (fun _ -> dispatch (Highlighted (Some chessId)))
+                        Button.onPointerLeave (fun _ -> dispatch (Highlighted None))
                         match fromPos, state.game.[id] with 
                         | Some _, _ -> Button.onClick (fun _ -> dispatch (To chessId)) 
                         | None, Some item when item.Color = state.Turn -> Button.onClick (fun _ -> dispatch (From chessId))
