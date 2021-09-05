@@ -1,5 +1,5 @@
 namespace Avalonia.Chess
-
+open Elmish
 open Chess.Pieces
 open Avalonia.FuncUI.Components
 open Avalonia
@@ -45,6 +45,8 @@ module ChessPage =
         | EndGame
         | Undo
         | Highlighted of ChessBoardId option
+        | MoveAi of (int * int) option
+        
 
     let getMoveAlpha (f,t) =
         sprintf "%s-%s" (getAlpha f) (getAlpha t)
@@ -52,40 +54,50 @@ module ChessPage =
     let addMoves moves fromId toId =
         [fromId,toId] |> List.append moves
 
-    let update (msg: Msg) (state: State) : State =
+    let minimaxAsync state = 
+        async { let move, _ = minimax2 state.game true state.Turn
+                do! Async.Sleep 500
+                return move }
+    let update (msg: Msg) (state: State) =
         match msg with
-        | From v -> { state with fromPos = Some v }
+        | MoveAi move ->
+            match move with
+            | Some (eFromId, eToId) -> 
+                let eMoveAction = moveById state.game (ChessId eFromId) (ChessId eToId)
+                { state with game = eMoveAction; GameOver = gameOver eMoveAction; Turn = swap state.Turn; Moves = addMoves state.Moves (ChessId eFromId) (ChessId eToId) }, Cmd.none
+            | None -> state, Cmd.none
+        | From v -> { state with fromPos = Some v }, Cmd.none
         | To v -> 
             let fromId = state.fromPos |> Option.get
             if isValidMoveById state.game fromId v then
                 let moveAction = moveById state.game fromId v
-
                 let enemy = swap state.Turn
-                let nState = { state with fromPos = None; game = moveAction; Moves = addMoves state.Moves fromId v; GameOver = gameOver moveAction; Turn = enemy }
 
-                let eMove, _ = minimax2 nState.game true enemy
-                match eMove with
-                | Some (eFromId, eToId) -> 
-                    let eMoveAction = moveById nState.game (ChessId eFromId) (ChessId eToId)
-                    { nState with game = eMoveAction; GameOver = gameOver eMoveAction; Turn = state.Turn; Moves = addMoves nState.Moves (ChessId eFromId) (ChessId eToId) }
-                | None -> nState
+                let nState = { state with 
+                                fromPos = None; 
+                                game = moveAction; 
+                                Moves = addMoves state.Moves fromId v; 
+                                GameOver = gameOver moveAction; 
+                                Turn = enemy }
+
+                nState, Cmd.OfAsync.perform minimaxAsync nState (fun r -> MoveAi r)
             else 
-                { state with fromPos = None }
-        | Reset -> init
-        | RemovePawns -> { init with game = noPawnGame }
-        | Flip -> { state with Player = swap state.Player  }
+                { state with fromPos = None }, Cmd.none
+        | Reset -> init, Cmd.none
+        | RemovePawns -> { init with game = noPawnGame }, Cmd.none
+        | Flip -> { state with Player = swap state.Player  }, Cmd.none
         | CopyMoves -> 
             Application.Current.Clipboard.SetTextAsync (state.Moves |> List.map getMoveAlpha |> String.concat ",") |> ignore
-            state
-        | EndGame -> {init with game = endGame }
+            state, Cmd.none
+        | EndGame -> {init with game = endGame }, Cmd.none
         | Undo -> 
-            if state.Moves.IsEmpty then state
+            if state.Moves.IsEmpty then state, Cmd.none
             else
                 let fromId,toId = state.Moves.[state.Moves.Length-1]
                 let moves = state.Moves |> List.filter (fun r -> r <> (fromId,toId))
                 let action = moveById state.game fromId toId 
-                {state with Moves = moves; game = action}
-        | Highlighted v -> {state with HighlightedPiece = v} 
+                {state with Moves = moves; game = action}, Cmd.none 
+        | Highlighted v -> {state with HighlightedPiece = v}, Cmd.none
             
     
     let button dispatch name action =

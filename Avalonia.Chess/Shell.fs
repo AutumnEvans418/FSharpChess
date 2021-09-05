@@ -35,12 +35,12 @@ module Shell =
     let update (msg: Msg) (state: State): State * Cmd<_> =
         match msg with
         | CounterMsg countermsg ->
-            let counterMsg =
+            let counterMsg, cmd =
                 ChessPage.update countermsg state.counterState
             { state with counterState = counterMsg },
             /// map the message to the kind of message 
             /// your child control needs to handle
-            Cmd.none
+            Cmd.map CounterMsg cmd
 
     let view (state: State) (dispatch) =
         DockPanel.create
