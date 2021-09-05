@@ -19,9 +19,7 @@ module TestModule =
     let validateMoves game move isValid action =
         let moves = parseMoves move
         
-        let valid, game = moves |> List.fold (fun (valid, game) (fromPos, toPos) -> 
-                                    let fromId = getXY fromPos |> xYToId
-                                    let toId = getXY toPos |> xYToId
+        let valid, game = moves |> List.fold (fun (valid, game) (fromId, toId) -> 
                                     let result = isValidMoveById (game) fromId toId
                                     let gameMove = moveById (game) fromId toId 
                                     (valid && result, gameMove)
@@ -40,7 +38,7 @@ module TestModule =
         [<TestCase("a2", "White", "Pawn")>]
         [<TestCase("a7", "Black", "Pawn")>]
         member _.ColorTest position color typeName =
-            let piece = lookup initialGame position |> Option.get
+            let piece = lookup initialGame (ChessAlpha position) |> Option.get
             piece.Name |> should equal typeName
             piece.Color |> string |> should equal color            
 
@@ -129,7 +127,7 @@ module TestModule =
         [<TestCase("a2", "Pawn")>]
         [<TestCase("a3", "None")>]
         member _.``Lookup an initial game piece`` str result =
-            lookup initialGame str |> Option.fold (fun _ v -> v.Name) "None" |> should equal result
+            lookup initialGame (ChessAlpha str) |> Option.fold (fun _ v -> v.Name) "None" |> should equal result
 
         [<TestCase("f2-f3,e7-e5,g2-g4,d8-h4","Winner Black")>]
         [<TestCase("f2-f3,e7-e5,g2-g4","Na")>]
@@ -143,7 +141,7 @@ module TestModule =
 
         [<Test>]
         member _.``endgame king should have no moves``() =
-            getMoves2 endGame2 63 |> Seq.length |> should equal 0
+            getMoves2 endGame2 (ChessId 63) |> Seq.length |> should equal 0
 
         [<Test>]
         member _.``endgame black should have no moves``() =
@@ -165,9 +163,9 @@ module TestModule =
         [<TestCase("a2-a3", "h8", "Rook")>]
         member _.MakeAMove str result piece =
             let frm,tto = parseMove str
-            let newBoard = moveByXY initialGame frm tto
+            let newBoard = moveById initialGame frm tto
                
-            lookup newBoard result |> Option.fold (fun _ v -> v.Name) "None" |> should equal piece
+            lookup newBoard (ChessAlpha result) |> Option.fold (fun _ v -> v.Name) "None" |> should equal piece
 
         [<Test>]
         member _.``game board is 64 squares``() =
@@ -200,7 +198,7 @@ module TestModule =
 
         [<TestCase("a2", 2)>]
         member _.``piece should have x number of moves`` piece moves =
-            let id = getXY piece |> xYToId
+            let id = ChessAlpha piece
             getMoves2 initialGame id |> Seq.length |> should equal moves
 
 

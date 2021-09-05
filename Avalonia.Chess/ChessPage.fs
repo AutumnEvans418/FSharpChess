@@ -16,8 +16,8 @@ module ChessPage =
 
     type State = { 
         game : Piece option list
-        fromPos : int option
-        Moves: string list
+        fromPos : ChessBoardId option
+        Moves: (ChessBoardId * ChessBoardId) list
         Player: Color
         GameOver: EndGame
         Turn: Color
@@ -26,8 +26,8 @@ module ChessPage =
     let init = { game = initialGame; fromPos = None; Moves=[]; Player = White; GameOver = Na; Turn=White; Ai=Black }
 
     type Msg = 
-        | From of int 
-        | To of int 
+        | From of ChessBoardId 
+        | To of ChessBoardId
         | Reset 
         | RemovePawns 
         | Flip 
@@ -35,10 +35,11 @@ module ChessPage =
         | EndGame
         | Undo
 
+    let getMoveAlpha (f,t) =
+        sprintf "%s-%s" (getAlpha f) (getAlpha t)
+
     let addMoves moves fromId toId =
-        let fromStr = idToPos fromId
-        let toStr = idToPos toId
-        [sprintf "%s-%s" fromStr toStr] |> List.append moves
+        [fromId,toId] |> List.append moves
 
     let update (msg: Msg) (state: State) : State =
         match msg with
@@ -54,8 +55,8 @@ module ChessPage =
                 let eMove, _ = minimax2 nState.game true enemy
                 match eMove with
                 | Some (eFromId, eToId) -> 
-                    let eMoveAction = moveById nState.game eFromId eToId
-                    { nState with game = eMoveAction; GameOver = gameOver eMoveAction; Turn = state.Turn; Moves = addMoves nState.Moves eFromId eToId }
+                    let eMoveAction = moveById nState.game (ChessId eFromId) (ChessId eToId)
+                    { nState with game = eMoveAction; GameOver = gameOver eMoveAction; Turn = state.Turn; Moves = addMoves nState.Moves (ChessId eFromId) (ChessId eToId) }
                 | None -> nState
             else 
                 { state with fromPos = None }
@@ -63,17 +64,14 @@ module ChessPage =
         | RemovePawns -> { init with game = noPawnGame }
         | Flip -> { state with Player = swap state.Player  }
         | CopyMoves -> 
-            Application.Current.Clipboard.SetTextAsync (state.Moves |> String.concat ",") |> ignore
+            Application.Current.Clipboard.SetTextAsync (state.Moves |> List.map getMoveAlpha |> String.concat ",") |> ignore
             state
         | EndGame -> {init with game = endGame }
         | Undo -> 
             if state.Moves.IsEmpty then state
             else
-                let moveStr = state.Moves.[state.Moves.Length-1]
-                let tos,froms = parseMove moveStr
-                let toId = getXY tos |> xYToId
-                let fromId = getXY froms |> xYToId
-                let moves = state.Moves |> List.filter (fun r -> r <> moveStr)
+                let fromId,toId = state.Moves.[state.Moves.Length-1]
+                let moves = state.Moves |> List.filter (fun r -> r <> (fromId,toId))
                 let action = moveById state.game fromId toId 
                 {state with Moves = moves; game = action}
     
@@ -110,12 +108,13 @@ module ChessPage =
             Grid.columnDefinitions (System.String.Join(",",[for r in 0..7 -> "*"]))
             Grid.children [
                 for id in 0..63 -> 
-                    let idStr = sprintf "(%s %i)" (idToPos id) id
-                    let x,y = idToXY id
+                    let chessId = ChessId id
+                    let idStr = sprintf "(%s %i)" (getAlpha chessId) id
+                    let x,y = getXY chessId
 
                     let background, forground = match fromPos, color id with 
-                                                | Some pos, _ when pos = id -> "lightblue","black"
-                                                | Some pos, _ when isValidMoveById state.game pos id -> "yellow","black"
+                                                | Some pos, _ when pos = chessId -> "lightblue","black"
+                                                | Some pos, _ when isValidMoveById state.game pos chessId -> "yellow","black"
                                                 | _, Some White -> "lightgray","black"
                                                 | _, Some Black -> "black","white"
                                                 | _, None -> 
@@ -135,8 +134,8 @@ module ChessPage =
                         Button.row row
                         Button.column x
                         match fromPos, state.game.[id] with 
-                        | Some _, _ -> Button.onClick (fun _ -> dispatch (To id)) 
-                        | None, Some item when item.Color = state.Turn -> Button.onClick (fun _ -> dispatch (From id))
+                        | Some _, _ -> Button.onClick (fun _ -> dispatch (To chessId)) 
+                        | None, Some item when item.Color = state.Turn -> Button.onClick (fun _ -> dispatch (From chessId))
                         | _,_ -> Button.onClick (fun _ -> ())
                     ]
             ]
@@ -166,7 +165,7 @@ module ChessPage =
         ListBox.create [
             Grid.row 1
             Grid.column 1
-            ListBox.dataItems state.Moves
+            ListBox.dataItems (state.Moves |> List.map getMoveAlpha)
             ListBox.itemTemplate (DataTemplateView<string>.create(fun item -> TextBlock.create[TextBlock.text item]))
         ]
 

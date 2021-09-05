@@ -15,32 +15,36 @@ module Pieces =
     let knight color={Color=color;HasMoved=false; Name="Knight";Type=Knight}
     let bishop color = {Color=color;HasMoved=false; Name="Bishop"; Type=Bishop}
     let rook color = {Color=color;HasMoved=false; Name="Rook"; Type=Rook}
+    let swap color = 
+        match color with | White -> Black | Black -> White  
 
         
 module ChessParser =
-    let mapper = dict['a', 0;'b', 1;'c', 2;'d', 3;'e', 4;'f', 5;'g', 6;'h', 7]
+    type ChessBoardId = ChessXY of int * int | ChessAlpha of string | ChessId of int
+    
+    let private mapper = dict['a', 0;'b', 1;'c', 2;'d', 3;'e', 4;'f', 5;'g', 6;'h', 7]
 
     let parseMove (str:string) =
         let from = str.Split('-').[0]
         let tTo = str.Split('-').[1]
-        (from, tTo)
+        ChessAlpha from, ChessAlpha tTo
 
     let parseMoves (str:string) = 
         let moves = [for r in str.Split(',') do if String.IsNullOrWhiteSpace r |> not then yield r] 
         moves |> List.map parseMove
 
-    let getXY (position: string) =
+    let private alphaToXY (position: string) =
         let xPos = mapper.[position.[0]]
         let yPos = System.Int32.Parse(position.[1].ToString()) - 1
         (xPos, yPos)
 
-    let xYToId (x,y) =
+    let private xYToId (x,y) =
         y * 8 + x
 
     let getRow id =
         id / 8
 
-    let idToXY id = 
+    let private idToXY id = 
         let y = getRow id
         let x = id - y * 8
         (x,y)
@@ -48,10 +52,30 @@ module ChessParser =
     let between x a b =
         x >= a && x <= b
 
-    let idToPos id =
-        let x,y = idToXY id
+    let private xYtoPos (x,y) = 
         let xPos = mapper.First(fun r -> r.Value = x).Key
         sprintf "%c%i" xPos (y+1) 
+    
+    let private idToPos id = idToXY id |> xYtoPos
+        
+
+    let getAlpha bId =
+        match bId with
+        | ChessAlpha a -> a
+        | ChessXY (x,y) -> xYtoPos (x,y)
+        | ChessId id -> idToPos id
+       
+    let getXY bId =
+        match bId with
+        | ChessAlpha a -> alphaToXY a
+        | ChessXY (x,y) -> (x,y)
+        | ChessId id -> idToXY id
+
+    let getId bId =
+        match bId with
+        | ChessAlpha a -> alphaToXY a |> xYToId
+        | ChessXY (x,y) -> xYToId (x,y)
+        | ChessId id -> id
 
 module ChessGrid =
     open Pieces
@@ -91,19 +115,17 @@ module ChessGrid =
         |> List.append [None; None; None; Some (queen White); Some (king White); None; None; None]
         
 
-    let lookupXY game x y =
-        game |> List.item (xYToId (x, y))
 
-    let lookup (game:'a option list) (position:string) =
-        let xPos, yPos = getXY position
-        lookupXY game xPos yPos
+    let lookup game bId =
+        game |> List.item (getId bId)
     
     let convertToGrid list = 
-        [for y in 0..7 -> [for x in 0..7 -> lookupXY list x y]]
+        [for y in 0..7 -> [for x in 0..7 -> lookup list (ChessXY (x,y))]]
 
 module ChessActions =
     open Pieces
     open ChessParser
+    open ChessGrid
     let inRange id = id < 64 && id >= 0
 
     let index color = 
@@ -205,7 +227,7 @@ module ChessActions =
 
     
     let validateMoves toId moves =
-        moves |> Seq.contains toId
+        moves |> Seq.contains (getId toId)
 
 
     let private getMoves game fromId includeMoves =
@@ -222,7 +244,7 @@ module ChessActions =
         | None -> Seq.empty
 
     let isPieceInCheck game fromId toId =
-        let enemyClr = getColor game fromId |> Option.get |> getEnemy
+        let enemyClr = getColor game (getId fromId) |> Option.get |> getEnemy
         let enemies = game 
                     |> List.mapi (fun i p -> match p with | Some pi -> Some(i,pi) | None -> None) 
                     |> List.choose id
@@ -236,59 +258,54 @@ module ChessActions =
         [0..63] |> List.exists (fun id -> 
             let piece = game |> List.item id
             match piece with
-            | Some p -> p.Type = King && p.Color = color && isPieceInCheck game id id
+            | Some p -> p.Type = King && p.Color = color && isPieceInCheck game (ChessId id) (ChessId id)
             | None -> false)
 
     
-    let swap color = 
-        match color with | White -> Black | Black -> White        
+          
             
 
-    let getKingMoves game fromId =
+    let private getKingMoves game fromId =
         let adds = [(1,0);(-1,0);(8,1);(-8,1);(9,1);(-9,1);(7,1);(-7,1)]
-        let check = isPieceInCheck game fromId
+        let check = isPieceInCheck game (ChessId fromId)
         seq [for (next,rowDif) in adds do 
                 let id = fromId + next
                 let row = getRow fromId - getRow id |> Math.Abs
-                if row = rowDif && inRange id && check id |> not && isEnemyColor game fromId id then 
+                if row = rowDif && inRange id && check (ChessId id) |> not && isEnemyColor game fromId id then 
                     yield id
             ]
 
     let moveById game fromId toId =
-        let piece = game |> List.item fromId |> Option.get
+        let piece = lookup game fromId |> Option.get
     
         [for id in 0..63 -> 
-            if fromId = id then None
-            else if toId = id then Some {piece with HasMoved = true}
+            if getId fromId = id then None
+            else if getId toId = id then Some {piece with HasMoved = true}
             else game.[id]]
 
-    let moveByXY game fromPos toPos = 
-        let fromId = getXY fromPos |> xYToId
-        let toId = getXY toPos |> xYToId
+    
 
-        moveById game fromId toId
-
-    let pruneMoves game fromId moves =
-        let color = getColor game fromId
+    let private pruneMoves game fromId moves =
+        let color = getColor game (getId fromId)
         match color with 
         | None -> moves
         | Some clr ->
             if isKingChecked game clr |> not then moves
             else
                 seq [for move in moves do 
-                        let nGame = moveById game fromId move
+                        let nGame = moveById game fromId (ChessId move)
                         if isKingChecked nGame clr |> not then yield move
                     ]
 
     let getMoves2 game fromId =
         let pruner = pruneMoves game fromId
 
-        let piece = game |> List.item fromId
+        let piece = game |> List.item (getId fromId)
         match piece with
         | Some p -> 
             match p.Type with
-            | King -> getKingMoves game fromId |> pruner
-            | _ -> getMoves game fromId false |> pruner
+            | King -> getKingMoves game (getId fromId) |> pruner
+            | _ -> getMoves game (getId fromId) false |> pruner
         | None -> Seq.empty
 
     let isValidMoveById game fromId toId =
@@ -303,7 +320,7 @@ module ChessActions =
         [0..63] 
         |> List.map (fun i -> (i, getColor game i)) 
         |> List.filter (fun (i, clr) -> match clr with | Some c -> c = color | _ -> false)
-        |> List.map (fun (i,clr) -> (i, getMoves2 game i))
+        |> List.map (fun (i,clr) -> (i, getMoves2 game (ChessId i)))
 
     let gameOver game = 
         let noBlackMoves = getMovesByColor game Black |> List.exists (fun (i,l) -> l |> Seq.length > 0) |> not
@@ -322,6 +339,8 @@ module ChessIcons =
 module ChessAi = 
     open ChessActions
     open Pieces
+    open ChessParser
+
     let getNode game color = 
         getMovesByColor game color
 
@@ -388,7 +407,7 @@ module ChessAi =
 
 
         let moveCalc (fromId, toId) =
-            let nGame = moveById game fromId toId
+            let nGame = moveById game (ChessId fromId) (ChessId toId)
             let _, value = minimax nGame alpha beta (depth-1) (maximizingPlayer |> not) (swap player)
             Some (fromId, toId), value
         
@@ -399,7 +418,7 @@ module ChessAi =
 
         let getResult action =
             nodes.ToList()
-                .SelectMany(fun (fromId, items) -> items.Select(fun toId -> (fromId, toId)))
+                .SelectMany(fun (fromId, items) -> items.Select(fun toId -> (fromId,toId)))
                 .Select(moveCalc)
                 |> action
 
