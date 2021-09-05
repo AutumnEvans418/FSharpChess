@@ -5,11 +5,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Pieces.fs" />
+    <Compile Include="ChessIcons.fs" />
+    <Compile Include="ChessParser.fs" />
+    <Compile Include="ChessGrid.fs" />
+    <Compile Include="ChessActions.fs" />
     <None Include="README.md" />
     <Compile Include="ChessGame.fs" />
   </ItemGroup>
-
-  <ItemGroup />
 
   <ItemGroup>
     <PackageReference Include="NUnit" Version="3.11.0" />
