@@ -130,7 +130,7 @@ module ChessPage =
 
     let chessBoard (state: State) (dispatch) =
         let fromPos = state.fromPos
-        let color id = state.game.[id] |> Option.map (fun r -> r.Color)
+        let color id = lookup state.game id |> Option.map (fun r -> r.Color)
         
         Grid.create [
             Grid.isSharedSizeScope true
@@ -144,13 +144,12 @@ module ChessPage =
                     let idStr = sprintf "(%s %i)" (getAlpha chessId) id
                     let x,y = getXY chessId
 
-                    
 
-                    let background = match fromPos, state.HighlightedPiece with 
-                                                | Some pos, _ when pos = chessId -> selectColor
-                                                | Some pos, _ when isValidMoveById state.game pos chessId -> highlightColor
-                                                | _, Some pos when pos = chessId -> selectColor
-                                                | _, Some pos when isValidMoveById state.game pos chessId -> highlightColor
+                    let background = match fromPos, state.HighlightedPiece, state.Turn = White with 
+                                                | Some pos, _, true when pos = chessId -> selectColor
+                                                | Some pos, _, true when isValidMoveById state.game pos chessId -> highlightColor
+                                                | _, Some pos, true when pos = chessId -> selectColor
+                                                | _, Some pos, true when isValidMoveById state.game pos chessId -> highlightColor
                                                 | _ -> 
                                                     if (id + (y % 2)) % 2 = 0 then
                                                         lightColor

@@ -108,5 +108,5 @@ module ChessAi =
             getResult (min (None, infinity))
 
     let minimax2 game maxPlayer player = 
-        minimax game 0. 10. 2 maxPlayer player
+        minimax game 1. 10. 2 maxPlayer player
         
