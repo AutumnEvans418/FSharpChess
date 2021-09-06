@@ -199,16 +199,28 @@ module ChessActions =
         | Winner of Color
         | Tie
         | Na
-    
+
+    let getBoardMoves game =
+        game |> List.mapi (fun i p -> getMoves2 game (ChessId i) |> Seq.map (fun move -> p,i, move)) |> Seq.concat
+
     let getMovesByColor game color =
-        [0..63] 
-        |> List.map (fun i -> (i, getColor game i)) 
-        |> List.filter (fun (i, clr) -> match clr with | Some c -> c = color | _ -> false)
-        |> List.map (fun (i,clr) -> (i, getMoves2 game (ChessId i)))
+        game |> List.mapi (fun i p -> match p with 
+                                        | Some piece -> 
+                                            if piece.Color = color then 
+                                                getMoves2 game (ChessId i) |> Seq.map (fun move -> p,i,move)
+                                            else
+                                                Seq.empty
+                                        | None -> Seq.empty)
+        |> Seq.concat
+        //[0..63] 
+        //|> List.map (fun i -> (i, getColor game i)) 
+        //|> List.filter (fun (i, clr) -> match clr with | Some c -> c = color | _ -> false)
+        //|> List.map (fun (i,clr) -> (i, getMoves2 game (ChessId i)))
+
 
     let gameOver game = 
-        let noBlackMoves = getMovesByColor game Black |> List.exists (fun (i,l) -> l |> Seq.length > 0) |> not
-        let noWhiteMoves = getMovesByColor game White |> List.exists (fun (i,l) -> l |> Seq.length > 0) |> not
+        let noBlackMoves = getMovesByColor game Black |> Seq.isEmpty
+        let noWhiteMoves = getMovesByColor game White |> Seq.isEmpty
 
         if noWhiteMoves && isKingChecked game White then Winner Black
         else if noBlackMoves && isKingChecked game Black then Winner Black

@@ -11,39 +11,52 @@ module ChessAi =
     let getNode game color = 
         getMovesByColor game color
 
-    let getValue piece =
-        match piece with
-        | Some p -> match p.Type with
-                    | Queen -> 20
-                    | King -> 100
-                    | Knight -> 6
-                    | Pawn -> 1
-                    | Bishop -> 5
-                    | Rook -> 5
-        | None -> 0
 
-    let getMoveValue game toId =
-        getValue (game |> List.item toId)
+    let private PlayerValues = dict [
+        White,1.
+        Black,-1.
+    ]
 
-    let getPlayerBoardValue game player =
-        let nodes = getNode game player
-        let pieces = nodes |> List.map (fun (p, moves) -> p) |> List.length
-        let moves = nodes |> List.map (fun (p, moves) -> moves |> Seq.length) |> List.sum
+    let private PieceValues = dict [
+        King,200.
+        Queen,9.
+        Rook,5.
+        Knight,3.
+        Bishop,3.
+        Pawn,1.
+    ]
 
-        let moveCalc id =
-            getMoveValue game id
+    //let getMoveValue game toId =
+    //    getValue (game |> List.item toId)
 
-        let moveValues = nodes |> List.map (fun (p, moves) -> moves |> Seq.map moveCalc |> Seq.sum) |> List.sum
-        [pieces;moves;moveValues] |> List.sum
+    let getPlayerBoardValue game =
+        let pieces = game 
+                    |> List.choose id 
+                    |> List.map (fun p -> PlayerValues.[p.Color] * PieceValues.[p.Type]) 
+                    |> List.sum
+        let mobility = game 
+                    |> getBoardMoves 
+                    |> Seq.map (fun (fr,_,_) -> PlayerValues.[fr.Value.Color])
+                    |> Seq.sum
+        pieces + mobility
 
-    let getBoardValue game player =
-        let current = getPlayerBoardValue game player
-        let enemy = getPlayerBoardValue game (swap player)
-        current - enemy
+        
+        //let nodes = getNode game player
+        //let pieces = nodes |> List.map (fun (p, moves) -> p) |> List.length
+        //let moves = nodes |> List.map (fun (p, moves) -> moves |> Seq.length) |> List.sum
+
+        //let moveCalc id =
+        //    getMoveValue game id
+
+        //let moveValues = nodes |> List.map (fun (p, moves) -> moves |> Seq.map moveCalc |> Seq.sum) |> List.sum
+        //[pieces;moves;moveValues] |> List.sum
+
+    let getBoardValue game =
+        getPlayerBoardValue game
 
     // https://www.chessprogramming.org/Simplified_Evaluation_Function
     // https://stackoverflow.com/questions/64417780/increase-the-average-depth-for-the-minimax-algorithm-in-chess
-    let rec minimax game alpha beta depth maximizingPlayer player: (int * int) option * int =
+    let rec minimax game alpha beta depth maximizingPlayer player: (int * int) option * float =
         
         //let min list = list |> Seq.append [None,Int32.MaxValue] |> Seq.minBy (fun (_, value) -> value)
         //let max list = list |> Seq.append [None,Int32.MinValue] |> Seq.maxBy (fun (_, value) -> value)
@@ -70,10 +83,10 @@ module ChessAi =
                         min (a, value) (list |> Seq.tail)
                     else
                         min (bestId, bestValue) (list |> Seq.tail)
-            | None -> None,0
+            | None -> (bestId, bestValue)
 
 
-        let moveCalc (fromId, toId) =
+        let moveCalc (_, fromId, toId) =
             let nGame = moveById game (ChessId fromId) (ChessId toId)
             let _, value = minimax nGame alpha beta (depth-1) (maximizingPlayer |> not) (swap player)
             Some (fromId, toId), value
@@ -84,17 +97,16 @@ module ChessAi =
         //    [for move in moves -> moveCalc i move ] |> action
 
         let getResult action =
-            nodes.ToList()
-                .SelectMany(fun (fromId, items) -> items.Select(fun toId -> (fromId,toId)))
+            nodes
                 .Select(moveCalc)
                 |> action
 
-        if depth = 0 || nodes |> List.isEmpty then None, getBoardValue game player
+        if depth = 0 || nodes |> Seq.isEmpty then None, getBoardValue game
         else if maximizingPlayer then
-            getResult (max (None, Int32.MinValue))
+            getResult (max (None, -infinity))
         else
-            getResult (min (None, Int32.MaxValue))
+            getResult (min (None, infinity))
 
     let minimax2 game maxPlayer player = 
-        minimax game 0 10 2 maxPlayer player
+        minimax game 0. 10. 2 maxPlayer player
         

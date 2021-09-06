@@ -146,10 +146,11 @@ module TestModule =
         [<Test>]
         member _.``endgame black should have no moves``() =
             let list = getMovesByColor endGame2 Black 
-            list |> List.length |> should equal 1
-            let id, moves = list |> List.item 0 
-            id |> should equal 63
-            moves |> Seq.length |> should equal 0
+            list |> Seq.length |> should equal 0
+            //list |> Seq.length |> should equal 1
+            //let id, from, moves = list |> Seq.head 
+            //id |> should equal 63
+            //moves |> Seq.length |> should equal 0
         
         [<Test>]
         member _.``endGame should be 64 grid``() =
@@ -172,7 +173,7 @@ module TestModule =
         [<Test>]
         [<Repeat(5)>]
         member _.``Ai should move``() =
-            let move, _ = minimax initialGame 0 10 3 true White
+            let move, _ = minimax initialGame 0. 10. 3 true White
             move |> Option.isSome |> Assert.That
 
         [<TestCase("d2-d4,e7-e6,e2-e4,b7-b6,g1-f3,g8-f6,b1-c3")>]
@@ -183,14 +184,15 @@ module TestModule =
 
         [<Test>]
         member _.``initial board score should be 0``() =
-            getBoardValue initialGame White |> should equal 0
+            getBoardValue initialGame |> should equal 0
 
-        [<TestCase("", 0, "no moves")>]
+        [<TestCase("", 0., "no moves")>]
         member _.``board state value should be`` moves value action =
             let game = validateMoves initialGame moves true action
-            getBoardValue game White |> should equal value
+            getBoardValue game |> should equal value
 
         [<TestCase("a2-h2", false, "move pawn onto ally pawn on other side of board should fail")>]
+        [<TestCase("a2-a3,f7-f5,b2-a3", false, "white pawn shouldn't be able to attack ally pawn")>]
         member _.``Pawn valid moves`` moves isValid action =
             validateMoves initialGame moves isValid action |> ignore
 
@@ -203,11 +205,9 @@ module TestModule =
         [<Test>]
         member _.``All moves should be in range``() =
             let moves = getMovesByColor initialGame White
-            for (piece,pMoves) in moves do
-                for move in pMoves do
-                    let p = initialGame.[piece]
-                    printfn "%O-%i" p move
-                    inRange move |> should equal true
+            for (piece, from,pMoves) in moves do
+                printfn "%O-%i" piece from
+                inRange pMoves |> should equal true
     end
 
     
