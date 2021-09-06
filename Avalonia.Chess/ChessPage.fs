@@ -95,7 +95,7 @@ module ChessPage =
             else
                 let fromId,toId = state.Moves.[state.Moves.Length-1]
                 let moves = state.Moves |> List.filter (fun r -> r <> (fromId,toId))
-                let action = moveById state.game fromId toId 
+                let action = moveById state.game toId fromId
                 {state with Moves = moves; game = action}, Cmd.none 
         | Highlighted v -> {state with HighlightedPiece = v}, Cmd.none
             
@@ -217,8 +217,9 @@ module ChessPage =
             Grid.children [
                 toolPanel state dispatch
                 movesPanel state
+                chessBoard state dispatch
                 match state.GameOver with
-                | Na -> chessBoard state dispatch
+                | Na -> ()
                 | _ -> gameOverView state
             ]
         ]      
