@@ -1,0 +1,91 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+	      <LangVersion>latest</LangVersion>
+	   <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>	  
+  </PropertyGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="Images\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <AvaloniaResource Remove="Images\Bishop-b.png" />
+    <AvaloniaResource Remove="Images\Bishop-w.png" />
+    <AvaloniaResource Remove="Images\King-b.png" />
+    <AvaloniaResource Remove="Images\King-w.png" />
+    <AvaloniaResource Remove="Images\Knight-b.png" />
+    <AvaloniaResource Remove="Images\Knight-w.png" />
+    <AvaloniaResource Remove="Images\Pawn-b.png" />
+    <AvaloniaResource Remove="Images\Pawn-w.png" />
+    <AvaloniaResource Remove="Images\Queen-b.png" />
+    <AvaloniaResource Remove="Images\Queen-w.png" />
+    <AvaloniaResource Remove="Images\Rook-b.png" />
+    <AvaloniaResource Remove="Images\Rook-w.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="Styles.xaml" />
+    <Content Include="Images\Bishop-b.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\Bishop-w.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\King-b.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\King-w.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\Knight-b.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\Knight-w.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\Pawn-b.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\Pawn-w.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\Queen-b.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\Queen-w.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\Rook-b.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\Rook-w.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Compile Include="ChessPage.fs" />
+    <Compile Include="Shell.fs" />
+    <Compile Include="App.fs" />
+  </ItemGroup>
+  <ItemGroup />
+
+	<ItemGroup>
+		<PackageReference Include="Avalonia" Version="11.3.6" />
+		<PackageReference Include="Avalonia.FuncUI" Version="1.5.1" />
+		<PackageReference Include="Avalonia.FuncUI.Elmish" Version="1.5.1" />
+		<PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.6" />
+		<PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.6" />
+		<!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
+		<PackageReference Include="Avalonia.Diagnostics" Version="11.3.6">
+			<IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
+			<PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Chess\Chess.fsproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Update="FSharp.Core" Version="9.0.303" />
+	</ItemGroup>
+	
+</Project>

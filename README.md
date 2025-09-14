@@ -83,6 +83,9 @@ The `ChessActions.fs` module contains the core logic for chess move generation, 
 
 This module is essential for enforcing chess rules and maintaining a valid game state throughout play.
 
-## Acknowledgements
+## Technologies Used
 - [Avalonia UI](https://avaloniaui.net/) for cross-platform GUI
-- F# community for language and library support
+- F#
+- .NET 8
+- Avalonia.FuncUI for functional UI programming
+- NUnit for testing

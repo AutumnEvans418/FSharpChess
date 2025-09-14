@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Program.fs" />
+        <AvaloniaResource Include="**\*.xaml" />
+        <PackageReference Include="Avalonia.Desktop" Version="11.3.6" />
+    
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Remove=".template.config\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Avalonia.Chess.Shared\Avalonia.Chess.Shared.fsproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Images\" />
+    </ItemGroup>
+
+</Project>

@@ -1,5 +1,7 @@
 namespace Avalonia.Chess
 
+open Avalonia.FuncUI.Hosts
+
 /// This is the main module of your application
 /// here you handle all of your child pages as well as their
 /// messages and their updates, useful to update multiple parts
@@ -13,7 +15,6 @@ module Shell =
     open Avalonia.FuncUI.DSL
     open Avalonia.FuncUI
     open Avalonia.FuncUI.Builder
-    open Avalonia.FuncUI.Components.Hosts
     open Avalonia.FuncUI.Elmish
 
     type State =

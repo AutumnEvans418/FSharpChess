@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net8.0-browser</TargetFramework>
+		<RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+		<WasmMainJSPath>wwwroot\main.js</WasmMainJSPath>
+		<WasmRuntimeAssetsLocation>./_framework</WasmRuntimeAssetsLocation>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="Program.fs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<WasmExtraFilesToDeploy Include="wwwroot\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="Properties\launchSettings.json" />
+		<Content Include="runtimeconfig.template.json" />
+		<Content Include="wwwroot\app.css" />
+		<Content Include="wwwroot\index.html" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="Properties\AssemblyInfo.cs" />
+	  <None Include="wwwroot\main.js" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Avalonia.Browser" Version="11.3.6" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Avalonia.Chess.Shared\Avalonia.Chess.Shared.fsproj" />
+	</ItemGroup>
+
+</Project>

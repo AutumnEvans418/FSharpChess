@@ -1,9 +1,10 @@
 namespace Avalonia.Chess
 open Elmish
 open Chess.Pieces
-open Avalonia.FuncUI.Components
+open Avalonia.FuncUI
 open Avalonia
 open Avalonia.Media.Imaging
+open Avalonia.Controls.ApplicationLifetimes
 
 module ChessPage =
     open Avalonia.Controls
@@ -55,9 +56,9 @@ module ChessPage =
         [fromId,toId] |> List.append moves
 
     let minimaxAsync state = 
-        async { let move, _ = minimax2 state.game true state.Turn
-                do! Async.Sleep 500
-                return move }
+        let move, _ = minimax2 state.game true state.Turn
+        move
+
     let update (msg: Msg) (state: State) =
         match msg with
         | MoveAi move ->
@@ -80,15 +81,20 @@ module ChessPage =
                                 GameOver = gameOver moveAction; 
                                 Turn = enemy }
 
-                nState, Cmd.OfAsync.perform minimaxAsync nState (fun r -> MoveAi r)
+                nState, Cmd.OfFunc.perform minimaxAsync nState (fun r -> MoveAi r)
             else 
                 { state with fromPos = None }, Cmd.none
         | Reset -> init, Cmd.none
         | RemovePawns -> { init with game = noPawnGame }, Cmd.none
         | Flip -> { state with Player = swap state.Player  }, Cmd.none
         | CopyMoves -> 
-            Application.Current.Clipboard.SetTextAsync (state.Moves |> List.map getMoveAlpha |> String.concat ",") |> ignore
-            state, Cmd.none
+            match Application.Current.ApplicationLifetime with
+            | :? IClassicDesktopStyleApplicationLifetime as desktop ->
+                let window = desktop.MainWindow
+                let clipboard = window.Clipboard
+                clipboard.SetTextAsync (state.Moves |> List.map getMoveAlpha |> String.concat ",") |> ignore
+                state, Cmd.none
+            | _ -> state, Cmd.none
         | EndGame -> {init with game = endGame }, Cmd.none
         | Undo -> 
             if state.Moves.IsEmpty then state, Cmd.none
@@ -164,14 +170,17 @@ module ChessPage =
                         Button.background background
                         Button.foreground "White"
                         ToolTip.tip (state.game.[id] |> Option.fold (fun _ a -> a.Name + " " + idStr) idStr)
-                        
+                        Button.horizontalAlignment HorizontalAlignment.Stretch
+                        Button.verticalAlignment VerticalAlignment.Stretch
+                        //Button.width 100
+                        //Button.height 100
                         match state.game.[id] with
                         | Some p -> Button.content (Image.create [Image.source (new Bitmap(getIcon p))])
                         | None -> ()
                         Button.row row
                         Button.column x
-                        Button.onPointerEnter (fun _ -> dispatch (Highlighted (Some chessId)))
-                        Button.onPointerLeave (fun _ -> dispatch (Highlighted None))
+                        Button.onPointerEntered (fun _ -> dispatch (Highlighted (Some chessId)))
+                        Button.onPointerExited (fun _ -> dispatch (Highlighted None))
                         match fromPos, state.game.[id] with 
                         | Some _, _ -> Button.onClick (fun _ -> dispatch (To chessId)) 
                         | None, Some item when item.Color = state.Turn -> Button.onClick (fun _ -> dispatch (From chessId))
