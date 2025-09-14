@@ -3,26 +3,20 @@
   <PropertyGroup>
     <IsTestProject>true</IsTestProject>
     <OutputType>Library</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="Tests.fs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="FsUnit" Version="3.4.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.0.0" />
     <PackageReference Include="NUnit" Version="3.11.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.13.0" />
+    <PackageReference Update="FSharp.Core" Version="4.6.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Chess\Chess.fsproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="4.6.2" />
   </ItemGroup>
 
 </Project>
